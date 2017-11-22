@@ -3,5 +3,5 @@
 * a more reasonable distribution of source files and headers
 * half range Gauss-Hermite integration
 * Wall boundary
- * diffuse scattering
- * non equilibrium extrapolation
+ + diffuse scattering
+ + non equilibrium extrapolation
