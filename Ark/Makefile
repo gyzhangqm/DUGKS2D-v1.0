@@ -1,7 +1,7 @@
 vpath %.h Header:Lib
 vpath %.cpp Cpp:Lib
 
-QModel = D2V16
+QModel = D2GHn
 
 CC = g++
 

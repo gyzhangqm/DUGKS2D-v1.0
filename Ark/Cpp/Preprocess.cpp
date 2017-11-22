@@ -4,141 +4,6 @@
 using std::cout;
 using std::endl;
 
-extern void DiscreteVelocityAssign();
-
-extern void setXiDotdS();
-
-void SelfCheck()
-{
-//
-	#ifdef _BB_BOUNDARY_SCHEME_FLIP
-	if("BB" != _BC_ARK)
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"\"BB\" != _BC_ARK"<<endl;
-		getchar();
-	}
-	#endif
-//
-	#ifdef _NEE_BOUNDARY_SCHEME_FLIP
-	if("NEE" != _BC_ARK)
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"\"NEE\" != _BC_ARK"<<endl;
-		getchar();
-	}
-	#endif
-//
-	#ifdef _CARTESIAN_MESH_FLIP
-		if("CD" != _FLUX_SCHEME_ARK)
-		{
-			_PRINT_ERROR_MSG_FLIP
-			cout <<"\"CD\" != _FLUX_SCHEME_ARK"<<endl;
-			getchar();
-		}
-	#else
-		if("UW" != _FLUX_SCHEME_ARK)
-		{
-			_PRINT_ERROR_MSG_FLIP
-			cout <<"\"UW\" != _FLUX_SCHEME_ARK"<<endl;
-			getchar();
-		}
-	#endif
-	if("Quad" == _MESHTYPE_ARK || "Tri" == _MESHTYPE_ARK)
-	{
-		if("UW" != _FLUX_SCHEME_ARK)
-		{
-			_PRINT_ERROR_MSG_FLIP
-			cout <<"\"UW\" != _FLUX_SCHEME_ARK"<<endl;
-			getchar();
-		}
-	}
-	else if("Car" == _MESHTYPE_ARK)
-	{
-		if("CD" != _FLUX_SCHEME_ARK)
-		{
-			_PRINT_ERROR_MSG_FLIP
-			cout <<"\"CD\" != _FLUX_SCHEME_ARK"<<endl;
-			getchar();
-		}
-	}
-	else
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"Unknown Mesh Type"<<endl;
-		getchar();
-	}
-}
-//
-void AllocateInCells(const int& CellNum,Cell_2D* &ptrCell)
-{
-	if(CellNum == 0) return;
-	for(int k = 0;k < CellNum;++k)
-		ptrCell[k].AllocateInCell();
-}
-void AllocateResource()
-{
-	DiscreteVelocityAssign();
-//
-	cout <<"Allocating Resources for Faces..."<<endl;
-	for(int n = 0;n < Faces;++n)
-		FaceArray[n].AllocateInFace();
-	cout <<"Allocating Resources for Faces Done"<<endl;
-//
-	cout <<"Calculating xi*n*dS..."<<endl;
-	setXiDotdS();
-	cout <<"Calculating xi*n*dS Done"<<endl;
-//
-	cout <<"Allocating Resources for Cells..."<<endl;
-	AllocateInCells(Cells,CellArray);
-	AllocateInCells(WallFaceNum,WallShadowCA);
-	AllocateInCells(PeriodicFaceNum,PeriodicShadowCA);
-	AllocateInCells(P_InletFaceNum,P_InletShadowCA);
-	AllocateInCells(P_OutletFaceNum,P_OutletShadowCA);
-	AllocateInCells(SymmetryFaceNum,SymmetryShadowCA);
-	AllocateInCells(P_FarfieldFaceNum,P_FarfieldShadowCA);
-	AllocateInCells(V_InletFaceNum,V_InletShadowCA);
-	for(int n = 0;n < PeriodicFaceNum;++n)
-	{
-		PeriodicShadowCA[n] = *PeriodicShadowCA[n].ShadowC;
-	}
-	cout <<"Allocating Resources for Cells Done"<<endl;
-}
-void DeallocateFaces(int BoundFaceNum, Face_2D** &ptrBoundFaceA)
-{
-	if (0 == BoundFaceNum) return;
-	delete[] ptrBoundFaceA;
-}
-void DeallocateCells(int BoundFaceNum, Cell_2D* &ptrBoundShadowCA)
-{
-	if (0 == BoundFaceNum) return;
-	delete[] ptrBoundShadowCA;
-}
-void DeallocateResource()
-{
-	delete[] xi_u;
-	delete[] xi_v;
-	delete[] NodeX;
-	delete[] NodeY;
-	delete[] FaceArray;
-	delete[] CellArray;
-	DeallocateFaces(InteriorFaceNum,InteriorFaceA);
-	DeallocateFaces(PeriodicFaceNum,PeriodicFaceA);
-	DeallocateFaces(WallFaceNum,WallFaceA);
-	DeallocateFaces(P_InletFaceNum,P_InletFaceA);
-	DeallocateFaces(P_OutletFaceNum,P_OutletFaceA);
-	DeallocateFaces(SymmetryFaceNum,SymmetryFaceA);
-	DeallocateFaces(P_FarfieldFaceNum,P_FarfieldFaceA);
-	DeallocateFaces(V_InletFaceNum,V_InletFaceA);
-//
-	DeallocateCells(WallFaceNum,WallShadowCA);
-	DeallocateCells(P_InletFaceNum,P_InletShadowCA);
-	DeallocateCells(P_OutletFaceNum,P_OutletShadowCA);
-	DeallocateCells(SymmetryFaceNum,SymmetryShadowCA);
-	DeallocateCells(P_FarfieldFaceNum,P_FarfieldShadowCA);
-	DeallocateCells(V_InletFaceNum,V_InletShadowCA);
-	//DeallocateCells(PeriodicFaceNum,PeriodicShadowCA);
-}
 //--------------------------------------------------------------------------------------
 //------------------------------------------Initialization------------------------------
 void UniformFlow()
@@ -274,6 +139,10 @@ void ShockStructure()
 		P_InletFaceA[k]->T_h = T0;
 		P_InletFaceA[k]->Lambda_h = 0.5/(T0*R0);
 		P_InletFaceA[k]->p_h = Rho0*R0*T0;
+		P_InletFaceA[k]->Mu_h = Mu0;
+		P_InletFaceA[k]->qx_h = 0;
+		P_InletFaceA[k]->qy_h = 0;
+		P_InletFaceA[k]->Factor();
 		for(int i = 0;i < DV_Qu;++i)
 		for(int j = 0;j < DV_Qv;++j)
 		{
@@ -298,6 +167,10 @@ void ShockStructure()
 		P_OutletFaceA[k]->T_h = T_Outlet;
 		P_OutletFaceA[k]->Lambda_h = 0.5/(T_Outlet*R0);
 		P_OutletFaceA[k]->p_h = Rho_Outlet*R0*T_Outlet;
+		P_OutletFaceA[k]->Mu_h = Mu0*pow(T_Outlet/T0,Omega0);
+		P_OutletFaceA[k]->qx_h = 0;
+		P_OutletFaceA[k]->qy_h = 0;
+		P_OutletFaceA[k]->Factor();
 		for(int i = 0;i < DV_Qu;++i)
 		for(int j = 0;j < DV_Qv;++j)
 		{
@@ -355,8 +228,62 @@ void TaylorGreenVortex(double t,double x,double y,double &u, double &v, double &
 			CellArray[i].fT[k] = f; //- 0.5*dt*(fEq_t + fEq_x + fEq_y);
 		}
 	}
+}*/
+void LidDrivenSquare()
+{
+	for(int n = 0;n < Cells;++n)
+	{
+		CellArray[n].Rho = Rho0;
+		CellArray[n].U   = 0;
+		CellArray[n].V   = 0;
+		CellArray[n].T   = T0;
+		CellArray[n].p   = Rho0*R0*T0;
+		CellArray[n].Mu  = Mu0;
+		CellArray[n].Lambda = Lambda0;
+		CellArray[n].Factor();
+		Update_phi_Eq(CellArray[n]);
+		for(int i = 0;i < DV_Qu;++i)
+		for(int j = 0;j < DV_Qv;++j)
+		{
+			CellArray[n].fT[i][j] = CellArray[n].fEq[i][j];
+			#ifndef _ARK_ISOTHERMAL_FLIP
+			CellArray[n].gT[i][j] = CellArray[n].gEq[i][j];
+			#endif
+		}
+	}
+	for(int n = 0;n < Faces;++n)
+	{
+		FaceArray[n].Rho_h = Rho0;	
+		if(fabs(Y_End - FaceArray[n].yf) < 1.0E-12)
+		{
+			FaceArray[n].U_h = U0;
+			FaceArray[n].V_h = V0;
+			FaceArray[n].rhsCell->U = U0;
+			FaceArray[n].rhsCell->V = V0;
+		}
+		else
+		{
+			FaceArray[n].U_h = 0;
+			FaceArray[n].V_h = 0;
+			FaceArray[n].rhsCell->U = 0;
+			FaceArray[n].rhsCell->V = 0;
+		}
+		FaceArray[n].T_h = T0;
+		FaceArray[n].p_h = Rho0*R0*T0;
+		FaceArray[n].Lambda_h = Lambda0;
+		FaceArray[n].Mu_h = Mu0;
+		FaceArray[n].Factor();
+	}
+	for(int k = 0;k < WallFaceNum;++k)
+	{
+		WallShadowCA[k].Rho = Rho0;
+		WallShadowCA[k].T   = T0;
+		WallShadowCA[k].Lambda = Lambda0;
+		WallShadowCA[k].Mu = Mu0;
+		WallShadowCA[k].Factor();
+	}
 }
-void SquareInitialization()
+/*void SquareInitialization()
 {
 	for(int i = 0;i != WallFaceNum;++i)
 	{

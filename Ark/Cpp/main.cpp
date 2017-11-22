@@ -44,15 +44,19 @@ extern void NeighbourCellConstruct();
 extern int MeshCheck();
 extern int MeshOutput(const string& s);
 extern void  Grad_LSMatrix();
-//--------------Preprocess.cpp-------------------
+//--------------Qmodel.cpp-------------------
+extern void DiscreteVelocityAssign();
+extern void setXiDotdS();
+//--------------main.cpp---------------------
 extern void AllocateResource();
 extern void DeallocateResource();
+//-------------Preprocess.cpp-------------------
 extern void TG_Initialization();
-extern void SquareInitialization();
 extern void TaylorCouetteInitialization();
 extern void ShockStructure();
 extern void UniformFlow();
 extern void Riemann2D();
+extern void LidDrivenSquare();
 //----------------Inc_2DSolver.cpp----------------
 extern void DUGKS2DSolver();
 //--------------Output.cpp------------------------
@@ -83,7 +87,8 @@ int main()
 	Grad_LSMatrix();
 //-------------------Initialization-------------------
 	//UniformFlow();
-	ShockStructure();
+	LidDrivenSquare();
+	//ShockStructure();
 	//Riemann2D();
 	//TG_Initialization();	
 	//SquareInitialization();
@@ -99,17 +104,134 @@ int main()
 	getchar();
 	#endif
 }
-/*int main()
+void SelfCheck()
 {
-	clock_t c_start,c_end;
-	time_t t_start,t_end;
-	c_start = clock();
-	time(&t_start);
-
-	c_end = clock();
-	time(&t_end);
-	//cout << "time used : " << difftime(c_end,c_start)/CLOCKS_PER_SEC << "s";
-	//cout << "time used : " << t_end - t_start << "s";
-
-}*/
-
+//
+	#ifdef _BB_BOUNDARY_SCHEME_FLIP
+	if("BB" != _BC_ARK)
+	{
+		_PRINT_ERROR_MSG_FLIP
+		cout <<"\"BB\" != _BC_ARK"<<endl;
+		getchar();
+	}
+	#endif
+//
+	#ifdef _NEE_BOUNDARY_SCHEME_FLIP
+	if("NEE" != _BC_ARK)
+	{
+		_PRINT_ERROR_MSG_FLIP
+		cout <<"\"NEE\" != _BC_ARK"<<endl;
+		getchar();
+	}
+	#endif
+//
+	#ifdef _CARTESIAN_MESH_FLIP
+		if("CD" != _FLUX_SCHEME_ARK)
+		{
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"\"CD\" != _FLUX_SCHEME_ARK"<<endl;
+			getchar();
+		}
+	#else
+		if("UW" != _FLUX_SCHEME_ARK)
+		{
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"\"UW\" != _FLUX_SCHEME_ARK"<<endl;
+			getchar();
+		}
+	#endif
+	if("Quad" == _MESHTYPE_ARK || "Tri" == _MESHTYPE_ARK)
+	{
+		if("UW" != _FLUX_SCHEME_ARK)
+		{
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"\"UW\" != _FLUX_SCHEME_ARK"<<endl;
+			getchar();
+		}
+	}
+	else if("Car" == _MESHTYPE_ARK)
+	{
+		if("CD" != _FLUX_SCHEME_ARK)
+		{
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"\"CD\" != _FLUX_SCHEME_ARK"<<endl;
+			getchar();
+		}
+	}
+	else
+	{
+		_PRINT_ERROR_MSG_FLIP
+		cout <<"Unknown Mesh Type"<<endl;
+		getchar();
+	}
+}
+//
+void AllocateInCells(const int& CellNum,Cell_2D* &ptrCell)
+{
+	if(CellNum == 0) return;
+	for(int k = 0;k < CellNum;++k)
+		ptrCell[k].AllocateInCell();
+}
+void AllocateResource()
+{
+	DiscreteVelocityAssign();
+//
+	cout <<"Allocating Resources for Faces..."<<endl;
+	for(int n = 0;n < Faces;++n)
+		FaceArray[n].AllocateInFace();
+	cout <<"Allocating Resources for Faces Done"<<endl;
+//
+	cout <<"Calculating xi*n*dS..."<<endl;
+	setXiDotdS();
+	cout <<"Calculating xi*n*dS Done"<<endl;
+//
+	cout <<"Allocating Resources for Cells..."<<endl;
+	AllocateInCells(Cells,CellArray);
+	AllocateInCells(WallFaceNum,WallShadowCA);
+	AllocateInCells(PeriodicFaceNum,PeriodicShadowCA);
+	AllocateInCells(P_InletFaceNum,P_InletShadowCA);
+	AllocateInCells(P_OutletFaceNum,P_OutletShadowCA);
+	AllocateInCells(SymmetryFaceNum,SymmetryShadowCA);
+	AllocateInCells(P_FarfieldFaceNum,P_FarfieldShadowCA);
+	AllocateInCells(V_InletFaceNum,V_InletShadowCA);
+	for(int n = 0;n < PeriodicFaceNum;++n)
+	{
+		PeriodicShadowCA[n] = *PeriodicShadowCA[n].ShadowC;
+	}
+	cout <<"Allocating Resources for Cells Done"<<endl;
+}
+void DeallocateFaces(int BoundFaceNum, Face_2D** &ptrBoundFaceA)
+{
+	if (0 == BoundFaceNum) return;
+	delete[] ptrBoundFaceA;
+}
+void DeallocateCells(int BoundFaceNum, Cell_2D* &ptrBoundShadowCA)
+{
+	if (0 == BoundFaceNum) return;
+	delete[] ptrBoundShadowCA;
+}
+void DeallocateResource()
+{
+	delete[] xi_u;
+	delete[] xi_v;
+	delete[] NodeX;
+	delete[] NodeY;
+	delete[] FaceArray;
+	delete[] CellArray;
+	DeallocateFaces(InteriorFaceNum,InteriorFaceA);
+	DeallocateFaces(PeriodicFaceNum,PeriodicFaceA);
+	DeallocateFaces(WallFaceNum,WallFaceA);
+	DeallocateFaces(P_InletFaceNum,P_InletFaceA);
+	DeallocateFaces(P_OutletFaceNum,P_OutletFaceA);
+	DeallocateFaces(SymmetryFaceNum,SymmetryFaceA);
+	DeallocateFaces(P_FarfieldFaceNum,P_FarfieldFaceA);
+	DeallocateFaces(V_InletFaceNum,V_InletFaceA);
+//
+	DeallocateCells(WallFaceNum,WallShadowCA);
+	DeallocateCells(P_InletFaceNum,P_InletShadowCA);
+	DeallocateCells(P_OutletFaceNum,P_OutletShadowCA);
+	DeallocateCells(SymmetryFaceNum,SymmetryShadowCA);
+	DeallocateCells(P_FarfieldFaceNum,P_FarfieldShadowCA);
+	DeallocateCells(V_InletFaceNum,V_InletShadowCA);
+	//DeallocateCells(PeriodicFaceNum,PeriodicShadowCA);
+}

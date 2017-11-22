@@ -45,6 +45,8 @@ void OutputCase()
 				 <<Cv<<"    =    specific heat of constant volume"<<endl
 				 <<Gamma<<"    =    Gamma//specific heat ratio"<<endl
 				 <<"#----------------------------------------"<<endl
+				 <<DV_Qu<<"    =    Qu"<<endl
+				 <<DV_Qv<<"    =    Qv"<<endl
 				 <<NL<<"    =    NL"<<endl
 				 <<ChLength<<"    =    Character Length"<<endl
 				 <<MinL<<"    =    MinL"<<endl

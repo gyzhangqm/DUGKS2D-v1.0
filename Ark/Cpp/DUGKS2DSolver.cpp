@@ -31,6 +31,29 @@ extern void Output_Residual(double t,double Residual);
 
 extern void Output_UVP(double const &t);
 
+//------------------------Boundary.cpp----------------------
+
+extern void P_Inlet_4_Boundary();
+
+extern void P_Outlet_5_Boundary();
+
+extern void WallShadowC_fBP(Cell_2D &shadowCell);
+
+extern void Wall_3_Boundary(Face_2D &face);
+
+//----------------------------------DEBUG---------------------------------------
+extern void Output_fBh(Face_2D& face,double t);
+
+extern void Output_gBh(Face_2D& face,double t);
+
+extern void Output_fh(Face_2D& face,double t);
+
+extern void Output_gh(Face_2D& face,double t);
+
+extern void Output_fT(Cell_2D& face,double t);
+
+extern void Output_gT(Cell_2D& face,double t);
+
 extern void Output_xcyc();
 
 extern void Output_fT_Append(Cell_2D &cell,double dt);
@@ -47,26 +70,11 @@ extern void Output_gh_Append(Face_2D &face,double dt);
 
 extern void Output_phi_Bh(Face_2D &face,double t);
 
-//----------------------------------DEBUG---------------------------------------
-extern void Output_fBh(Face_2D& face,double t);
-
-extern void Output_gBh(Face_2D& face,double t);
-
-extern void Output_fh(Face_2D& face,double t);
-
-extern void Output_gh(Face_2D& face,double t);
-
-extern void Output_fT(Cell_2D& face,double t);
-
-extern void Output_gT(Cell_2D& face,double t);
-
 //------------------------------------------------------------------------------
 
 void LeastSquareDebug();
 
 void LeastSquareABC(Cell_2D *center);
-
-void WallShadowC_fBP();
 
 void Update_phi_BP(Cell_2D& cell);
 
@@ -102,8 +110,8 @@ omp_set_num_threads(ThreadNum);
 step = 0;
 #pragma omp parallel
 {
-while(step < 70000)
-//while(ResidualPer1k > RESIDUAL)
+//while(step < 10000)
+while(ResidualPer1k > RESIDUAL)
 {
 	#pragma omp for schedule(guided)
 	for(int n = 0;n < Cells;++n)
@@ -112,41 +120,16 @@ while(step < 70000)
 		Update_phi_BP(CellArray[n]);
 	}
 //--------------------------------------Update-fBP--------------------------------
-	// #ifdef _Wall_3_BCs_FLIP
-	// WallShadowC_fBP();
-	//#endif
-// 	#ifdef _P_INLET_4_BCS_FLIP
-// 	for(int k = 0;k < P_InletFaceNum;++k)
-// 		for(int i = 0;i < DV_Qu;++i)
-// 		for(int j = 0;j < DV_Qv;++j)
-// 		{
-// 			P_InletShadowCA[k].fBP[i][j] = P_InletShadowCA[k].Cell_C[0]->fBP[i][j];
-// //isothermal flip
-// 			#ifndef _ARK_ISOTHERMAL_FLIP
-// 			P_InletShadowCA[k].gBP[i][j] = P_InletShadowCA[k].Cell_C[0]->gBP[i][j];
-// 			#endif
-// 		}
-// 	#endif
-// 	#ifdef _P_OUTLET_5_BCS_FLIP
-// 	for(int k = 0;k < P_OutletFaceNum;++k)
-// 		for(int i = 0;i < DV_Qu;++i)
-// 		for(int j = 0;j < DV_Qv;++j)
-// 		{
-// 			P_OutletShadowCA[k].fBP[i][j] = P_OutletShadowCA[k].Cell_C[0]->fBP[i][j];
-// //isothermal flip
-// 			#ifndef _ARK_ISOTHERMAL_FLIP
-// 			P_OutletShadowCA[k].gBP[i][j] = P_OutletShadowCA[k].Cell_C[0]->gBP[i][j];
-// 			#endif
-// 		}
-// 	#endif
-//-------------------------------------------------------------------------------
-//----------------------------LeastSquare Debug------------------------
-	#ifdef _ZERO_NDEBUG_FLIP
-	#ifdef _CARTESIAN_LS_DEBUG_FLIP
-		LeastSquareDebug();
-		cout <<"Least Square Debug Done"<<endl;
+	#ifdef _Wall_3_BCs_FLIP
+	#pragma omp for schedule(guided)
+	for(int n = 0;n < WallFaceNum;++n)
+		WallShadowC_fBP(WallShadowCA[n]);
 	#endif
-		break;
+	#ifdef _P_INLET_4_BCS_FLIP	
+		P_Inlet_4_Boundary();
+	#endif
+	#ifdef _P_OUTLET_5_BCS_FLIP
+		P_Outlet_5_Boundary();
 	#endif
 //-------------------------------LeastSquare------------------------------
 	 #pragma omp for schedule(guided)
@@ -155,7 +138,6 @@ while(step < 70000)
 		LeastSquareABC(CellArray + n);
 		//Zero_PartialDerivatives(CellArray[n]);
 	 }
-//------------------------------------------------------------------------
 //-------------------------------Flux-------------------------------------
 //-------------------------------Interior Face-----------------------------	
 	#ifdef _ARK_LIMITER_FLIP
@@ -169,9 +151,16 @@ while(step < 70000)
 			Flux_2D(*BoundFaceA[n]);
 	#else
 		#pragma omp for schedule(guided)
-		for(int n = 0;n < Faces;++n)
+		for(int n = 0;n < InteriorFaceNum;++n)
 		{
-			Flux_2D(FaceArray[n]);
+			Flux_2D(*InteriorFaceA[n]);
+		}
+	#endif
+	#ifdef _Wall_3_BCs_FLIP
+		#pragma omp for schedule(guided)
+		for(int n = 0;n < WallFaceNum;++n)
+		{
+			Wall_3_Boundary(*WallFaceA[n]);
 		}
 	#endif
 // //----------------------------------------Wall Face----------------------------------
@@ -192,17 +181,6 @@ while(step < 70000)
 // 	for(int i = 0;i < WallFaceNum;++i)
 // 		Update_BoundFlux(*WallFaceA[i]);
 // 	#endif
-// //----------------------------Pressure Inlet Face-------------------------------------
-// 	#ifdef _P_INLET_4_BCS_FLIP
-// 	for(int i = 0;i < P_InletFaceNum;++i)
-// 		Update_BoundFlux(*P_InletFaceA[i]);
-// 	#endif
-// //----------------------------------Pressure Outlet Face-----------------------------
-// 	#ifdef _P_OUTLET_5_BCS_FLIP
-// 	for(int i = 0;i < P_OutletFaceNum;++i)
-// 		Update_BoundFlux(*P_OutletFaceA[i]);
-// 	#endif
-// 	}
 //----------------------------------------------------------------------------------
 	#pragma omp for schedule(guided)
 	for(int n = 0;n < Cells;++n)
@@ -326,23 +304,6 @@ void Zero_PartialDerivatives(Cell_2D &cell)
 		cell.gBP_x[i][j] = 0.0;
 		cell.gBP_y[i][j] = 0.0;
 #endif
-	}
-}
-void WallShadowC_fBP()
-{
-	for(int n = 0;n != WallFaceNum;++n)
-	{
-		Cell_2D* &cell = WallShadowCA[n].Cell_C[0];
-		WallShadowCA[n].Rho = cell->Rho;//Non-Equilibrium Extrapolation
-		Update_phi_Eq(WallShadowCA[n]);
-		for(int i = 0;i < DV_Qu;++i)
-		for(int j = 0;j < DV_Qv;++j)
-		{
-			WallShadowCA[n].fBP[i][j] = WallShadowCA[n].fEq[i][j]
-			+ cell->aNEq*(cell->fT[i][j] - cell->fEq[i][j]);
-			WallShadowCA[n].gBP[i][j] = WallShadowCA[n].gEq[i][j]
-			+ cell->aNEq*(cell->gT[i][j] - cell->gEq[i][j]);
-		}
 	}
 }
 void Update_phi_BP(Cell_2D& cell)
@@ -614,7 +575,9 @@ void Update_SumRho(int step)
 	for(int i = 0;i < Cells;++i)
 	{
 		SumRho += CellArray[i].Rho;
+		#ifndef _ARK_ISOTHERMAL_FLIP 
 		SumT += CellArray[i].T;
+		#endif
 	}
 	Output_SumRho(step*dt);
 }
@@ -635,8 +598,10 @@ void Update_Residual(int step)
 		Output_Residual(step*dt,ResidualPer1k);
 		if(step%writeFileControl == 0)
 		Output_Flowfield(step*dt, step);
+	#ifndef _ARK_NOHUP_FLIP
 		cout << setiosflags(ios::scientific) << setprecision(6);
 		cout <<step <<"    "<<step*dt<<"    "<<SumRho<<"    "<<SumT<<"    "<<ResidualPer1k<<'\n';
+	#endif
 }
 void UpdateL2Error(int step)
 {

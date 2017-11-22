@@ -31,15 +31,15 @@
 #endif
 
 #ifndef _BC_ARK
-#define _BC_ARK "_4_5" //BB = bounce back,NEE = non-equilibrium extrapolation,DS = diffusive scattering
+#define _BC_ARK "_3_DS" //BB = bounce back,NEE = non-equilibrium extrapolation,DS = diffusive scattering
 #endif
 
 #ifndef _QMODEL_ARK
-#define _QMODEL_ARK "D2V16"
+#define _QMODEL_ARK "D2GHn"
 #endif
 
 #ifndef _MESHFILE_NAME_ARK
-#define _MESHFILE_NAME_ARK "_Car_Blend_ShockTube"
+#define _MESHFILE_NAME_ARK "_Cartesian_Wall_Square"
 #endif
 //----------------Boundary Condition Macro------------------
 /*#ifndef _CARTESIAN_MESH_FLIP
@@ -54,35 +54,39 @@
 #define _NEE_BOUNDARY_SCHEME_FLIP
 #endif*/
 
-#ifndef _P_INLET_4_BCS_FLIP
-#define _P_INLET_4_BCS_FLIP
-#endif
+// #ifndef _P_INLET_4_BCS_FLIP
+// #define _P_INLET_4_BCS_FLIP
+// #endif
 
-#ifndef _P_OUTLET_5_BCS_FLIP
-#define _P_OUTLET_5_BCS_FLIP
-#endif
+// #ifndef _P_OUTLET_5_BCS_FLIP
+// #define _P_OUTLET_5_BCS_FLIP
+// #endif
 
-#ifndef _PERIODIC_12_8_BCs_FLIP
-#define _PERIODIC_12_8_BCs_FLIP
-#endif
+// #ifndef _PERIODIC_12_8_BCs_FLIP
+// #define _PERIODIC_12_8_BCs_FLIP
+// #endif
 
-/*#ifndef _Wall_3_BCs_FLIP
+#ifndef _Wall_3_BCs_FLIP
 #define _Wall_3_BCs_FLIP
-#endif*/
+#endif
 
 //-------------------------------Isothermal-------------------------------
 #ifndef _ARK_ISOTHERMAL_FLIP
 #define _ARK_ISOTHERMAL_FLIP
 #endif
 //
-#ifndef _ARK_LIMITER_FLIP
-#define _ARK_LIMITER_FLIP
-#endif
+// #ifndef _ARK_LIMITER_FLIP
+// #define _ARK_LIMITER_FLIP
+// #endif
 //----------------------------------------------------------------------------
 
-/*#ifndef _OUTPUT_L2NORM_ERROR_FLIP
-#define _OUTPUT_L2NORM_ERROR_FLIP
-#endif*/
+// #ifndef _OUTPUT_L2NORM_ERROR_FLIP
+// #define _OUTPUT_L2NORM_ERROR_FLIP
+// #endif
+
+#ifndef _ARK_NOHUP_FLIP	//Flip on for server
+#define _ARK_NOHUP_FLIP
+#endif
 
 #ifndef _PRINT_ERROR_MSG_FLIP
 #define _PRINT_ERROR_MSG_FLIP  cout<<"File : "<<__FILE__<<"  Line : "\

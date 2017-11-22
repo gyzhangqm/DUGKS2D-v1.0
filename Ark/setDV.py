@@ -138,6 +138,7 @@ def dvNC(xiMax,N):
     return (Xis, weights)
 
 if __name__ == '__main__':
+    CC = np.sqrt(2.0)
     if len(sys.argv) != 4 :
         print_help()
         exit()
@@ -147,7 +148,7 @@ if __name__ == '__main__':
             print_help()
             exit()
 
-        Xis, weights = dvGH(float(sys.argv[2]), int(sys.argv[3]))
+        Xis, weights = dvGH(CC, int(sys.argv[3]))#dvGH(float(sys.argv[2]), int(sys.argv[3]))
         save_file(Xis, weights)
     elif sys.argv[1] == 'NC':
         if int(sys.argv[3])%4 != 1:

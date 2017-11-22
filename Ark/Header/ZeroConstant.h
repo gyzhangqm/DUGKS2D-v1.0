@@ -1,12 +1,12 @@
 #ifndef _ZERO_INFORMATION_H_
 #define _ZERO_INFORMATION_H_
 
-#include "D2V16.h"
+#include "D2GHn.h"
 
 //------------------------------Normalized Parameters----------------------------
 const double 
 
-CFL = -1.0E-3,
+CFL = 0.8,
 
 dt = CFL > 0.0 ? CFL*MinL/(MaxU + U0): 1.0E-3,
 
@@ -71,18 +71,16 @@ W_i = 0.2;
 //-----------------------------Output-------------------
 const int
 
-VelocityBCs = 0,
-
 ZeroDebugControl = 1000, //
 
-ConvergenceControl = 1, //
+ConvergenceControl = 10, //
 
-ResidualControl = 1, //print to screen
+ResidualControl = 10, //print to screen
 
-writeFileControl = 1;
+writeFileControl = 10000;
 
 double const
 
-RESIDUAL = 1.0E-6;
+RESIDUAL = 1.0E-8;
 
 #endif

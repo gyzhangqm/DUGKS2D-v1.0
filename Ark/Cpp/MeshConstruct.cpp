@@ -410,9 +410,17 @@ void ShadowCBoundConstruct(int BoundFaceNum,Face_2D** &ptrFaceA,Cell_2D* &ptrSha
 		ptrFaceA[i]->rhsCell = ptrShadowCA + i;
 		ptrShadowCA[i].Face_C[0] = ptrFaceA[i];
 		//PushCell(*ptrFaceA[i]->lhsCell,ptrShadowCA + i);
-		ptrShadowCA[i].xc = ptrFaceA[i]->xf;
-		ptrShadowCA[i].yc = ptrFaceA[i]->yf;
 		ptrShadowCA[i].Cell_C[0] = ptrFaceA[i]->lhsCell;
+		if(3 == ptrFaceA[i]->bc_type)
+		{
+			ptrShadowCA[i].xc = ptrFaceA[i]->xf;
+			ptrShadowCA[i].yc = ptrFaceA[i]->yf;
+		}
+		else
+		{
+			ptrShadowCA[i].xc = 2.0*ptrFaceA[i]->xf - ptrShadowCA[i].Cell_C[0]->xc;
+			ptrShadowCA[i].yc = 2.0*ptrFaceA[i]->yf - ptrShadowCA[i].Cell_C[0]->yc;	
+		}
 		ptrShadowCA[i].celltype = ptrFaceA[i]->lhsCell->celltype;
 		ptrShadowCA[i].volume = ptrFaceA[i]->lhsCell->volume;
 	}
