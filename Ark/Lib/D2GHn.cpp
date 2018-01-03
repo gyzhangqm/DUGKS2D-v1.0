@@ -297,3 +297,55 @@ void IntegralShearStress()
 		DeallocateARK(sTau_yy,DV_Qu,DV_Qv);
 	}
 }
+//---------------------------------Wall_3_Boundary------------------------
+// void Wall_3_Boundary(Face_2D &face)
+// {
+// 	double sumOut = 0,sumIn = 0;
+// //-----------------------Real Flux Outward---------------------
+// 	face.Rho_h = face.lhsCell->Rho;
+// 	for(int i = 0;i < DV_Qu;++i)
+// 	for(int j = 0;j < DV_Qv;++j)
+// 	{
+// 		if(face.xi_n_dS[i][j] > 0)
+// 		{
+// 			UW_Interior_phi_Bh(face,face.lhsCell,i,j);
+// 			Update_phi_Eqh(face,i,j);
+// 			Update_phi_h(face,i,j);
+// 			Update_phiFlux_h(face,i,j);
+// 			sumOut += wGH[i]*wGH[j]*face.fh[i][j];
+// 		}
+// 	}
+// //---------------------Spurious Flux Inward-----------------------
+// 	face.Rho_h = 1.0;
+// 	for(int i = 0;i < DV_Qu;++i)
+// 	for(int j = 0;j < DV_Qv;++j)
+// 	{
+// 		if(face.xi_n_dS[i][j] < 0)
+// 		{
+// 			Update_phi_Eqh(face,i,j);
+// 			face.fh[i][j] = face.fEqh[i][j];
+// 			//isothermal flip
+// 			#ifndef _ARK_ISOTHERMAL_FLIP
+// 			face.gh[i][j] = face.gEqh[i][j];
+// 			#endif
+// 			Update_phiFlux_h(face,i,j);
+// 			sumIn += wGH[i]*wGH[j]*face.fh[i][j];
+// 		}
+// 	}
+// 	face.Rho_h = -sumOut/sumIn;
+// //------------------------------------------------
+// 	for(int i = 0;i < DV_Qu;++i)
+// 	for(int j = 0;j < DV_Qv;++j)
+// 	{
+// 		if(face.xi_n_dS[i][j] < 0)
+// 		{
+// 			Update_phi_Eqh(face,i,j);
+// 			face.fh[i][j] = face.fEqh[i][j];
+// 			//isothermal flip
+// 			#ifndef _ARK_ISOTHERMAL_FLIP
+// 			face.gh[i][j] = face.gEqh[i][j];
+// 			#endif
+// 			Update_phiFlux_h(face,i,j);
+// 		}
+// 	}
+// }

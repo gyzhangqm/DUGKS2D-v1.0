@@ -6,9 +6,9 @@
 //------------------------------Normalized Parameters----------------------------
 const double 
 
-CFL = 0.8,
+CFL = 0.5,
 
-dt = CFL > 0.0 ? CFL*MinL/(MaxU + U0): 1.0E-3,
+dt = CFL > 0.0 ? CFL*MinL/(MaxU): 1.0E-3,
 
 h = 0.5*dt;
 
@@ -71,16 +71,20 @@ W_i = 0.2;
 //-----------------------------Output-------------------
 const int
 
+VelocityZone = 7,
+
+End_Step = 1000000,
+
 ZeroDebugControl = 1000, //
 
-ConvergenceControl = 10, //
+ConvergenceControl = 100, //
 
-ResidualControl = 10, //print to screen
+ResidualControl = 100, //print to screen
 
-writeFileControl = 10000;
+writeFileControl = 100000;
 
 double const
 
-RESIDUAL = 1.0E-8;
+RESIDUAL = 1.0E-10;
 
 #endif

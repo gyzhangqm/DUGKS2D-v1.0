@@ -16,9 +16,9 @@
 // #define _CARTESIAN_LS_DEBUG_FLIP
 // #endif
 
-/*#ifndef _SINGLE_STEP_DEBUG_FLIP
+#ifndef _SINGLE_STEP_DEBUG_FLIP
 #define _SINGLE_STEP_DEBUG_FLIP
-#endif*/
+#endif
 //----------------------------------------------------------
 //----------------------------------------------------------
 
@@ -30,8 +30,9 @@
 #define _FLUX_SCHEME_ARK "UW"							//UW = up wind,CD = central difference;
 #endif
 
+//BB = bounce back,NEE = non-equilibrium extrapolation,DS = diffusive scattering
 #ifndef _BC_ARK
-#define _BC_ARK "_3_DS" //BB = bounce back,NEE = non-equilibrium extrapolation,DS = diffusive scattering
+#define _BC_ARK "NEE"
 #endif
 
 #ifndef _QMODEL_ARK
@@ -39,20 +40,13 @@
 #endif
 
 #ifndef _MESHFILE_NAME_ARK
-#define _MESHFILE_NAME_ARK "_Cartesian_Wall_Square"
+#define _MESHFILE_NAME_ARK "_Quad_Wall_Bicylinder"
 #endif
 //----------------Boundary Condition Macro------------------
 /*#ifndef _CARTESIAN_MESH_FLIP
 #define _CARTESIAN_MESH_FLIP
 #endif*/
 
-/*#ifndef _BB_BOUNDARY_SCHEME_FLIP
-#define _BB_BOUNDARY_SCHEME_FLIP
-#endif*/
-
-/*#ifndef _NEE_BOUNDARY_SCHEME_FLIP
-#define _NEE_BOUNDARY_SCHEME_FLIP
-#endif*/
 
 // #ifndef _P_INLET_4_BCS_FLIP
 // #define _P_INLET_4_BCS_FLIP
@@ -68,6 +62,13 @@
 
 #ifndef _Wall_3_BCs_FLIP
 #define _Wall_3_BCs_FLIP
+	/*#ifndef _BB_BOUNDARY_SCHEME_FLIP
+	#define _BB_BOUNDARY_SCHEME_FLIP
+	#endif*/
+//
+// 	#ifndef _NEE_BOUNDARY_SCHEME_FLIP
+// 	#define _NEE_BOUNDARY_SCHEME_FLIP
+// 	#endif
 #endif
 
 //-------------------------------Isothermal-------------------------------
@@ -80,13 +81,13 @@
 // #endif
 //----------------------------------------------------------------------------
 
-// #ifndef _OUTPUT_L2NORM_ERROR_FLIP
-// #define _OUTPUT_L2NORM_ERROR_FLIP
-// #endif
-
-#ifndef _ARK_NOHUP_FLIP	//Flip on for server
-#define _ARK_NOHUP_FLIP
+#ifndef _OUTPUT_L2NORM_ERROR_FLIP
+#define _OUTPUT_L2NORM_ERROR_FLIP
 #endif
+
+// #ifndef _ARK_NOHUP_FLIP	//Flip on for server
+// #define _ARK_NOHUP_FLIP
+// #endif
 
 #ifndef _PRINT_ERROR_MSG_FLIP
 #define _PRINT_ERROR_MSG_FLIP  cout<<"File : "<<__FILE__<<"  Line : "\

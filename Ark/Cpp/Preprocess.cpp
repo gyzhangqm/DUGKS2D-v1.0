@@ -10,15 +10,16 @@ void UniformFlow()
 {
 		for(int n = 0;n < Cells;++n)
 		{
-			CellArray[n].Rho = Rho_Outlet;
-			CellArray[n].U = U_Outlet;
-			CellArray[n].V = V_Outlet;
-			CellArray[n].T = T_Outlet;
-			CellArray[n].p = Rho_Outlet*R0*T_Outlet;
-			CellArray[n].Lambda = 0.5/(T_Outlet*R0);
+			CellArray[n].Rho = Rho0;
+			CellArray[n].U = U0;
+			CellArray[n].V = V0;
+			CellArray[n].T = T0;
+			CellArray[n].p = Rho0*R0*T0;
+			CellArray[n].Lambda = 0.5/(T0*R0);
 			CellArray[n].qx = 0;
 			CellArray[n].qy = 0;
 			CellArray[n].Mu = Mu0;
+			CellArray[n].Tau = 2.0*Nu0*Lambda0;
 			CellArray[n].Factor();
 			Update_phi_Eq(CellArray[n]);
 			for(int i = 0;i < DV_Qu;++i)
@@ -33,13 +34,14 @@ void UniformFlow()
 		}
 		for(int n = 0;n < Faces;++n)
 		{
-			FaceArray[n].Rho_h = Rho_Outlet;
-			FaceArray[n].U_h = U_Outlet;
-			FaceArray[n].V_h = V_Outlet;
-			FaceArray[n].T_h = T_Outlet;
-			FaceArray[n].p_h = Rho_Outlet*R0*T_Outlet;
-			FaceArray[n].Lambda_h = 0.5/(T_Outlet*R0);
+			FaceArray[n].Rho_h = Rho0;
+			FaceArray[n].U_h = U0;
+			FaceArray[n].V_h = V0;
+			FaceArray[n].T_h = T0;
+			FaceArray[n].p_h = Rho0*R0*T0;
+			FaceArray[n].Lambda_h = 0.5/(T0*R0);
 			FaceArray[n].Mu_h = Mu0;
+			FaceArray[n].Tau_h = 2.0*Nu0*Lambda0;
 			FaceArray[n].Factor();
 			for(int i = 0;i < DV_Qu;++i)
 			for(int j = 0;j < DV_Qv;++j)
@@ -240,6 +242,7 @@ void LidDrivenSquare()
 		CellArray[n].p   = Rho0*R0*T0;
 		CellArray[n].Mu  = Mu0;
 		CellArray[n].Lambda = Lambda0;
+		CellArray[n].Tau = 2.0*Nu0*Lambda0;
 		CellArray[n].Factor();
 		Update_phi_Eq(CellArray[n]);
 		for(int i = 0;i < DV_Qu;++i)
@@ -254,7 +257,7 @@ void LidDrivenSquare()
 	for(int n = 0;n < Faces;++n)
 	{
 		FaceArray[n].Rho_h = Rho0;	
-		if(fabs(Y_End - FaceArray[n].yf) < 1.0E-12)
+		if(VelocityZone == FaceArray[n].zone)
 		{
 			FaceArray[n].U_h = U0;
 			FaceArray[n].V_h = V0;
@@ -272,6 +275,7 @@ void LidDrivenSquare()
 		FaceArray[n].p_h = Rho0*R0*T0;
 		FaceArray[n].Lambda_h = Lambda0;
 		FaceArray[n].Mu_h = Mu0;
+		FaceArray[n].Tau_h = 2.0*Nu0*Lambda0;
 		FaceArray[n].Factor();
 	}
 	for(int k = 0;k < WallFaceNum;++k)
@@ -280,6 +284,7 @@ void LidDrivenSquare()
 		WallShadowCA[k].T   = T0;
 		WallShadowCA[k].Lambda = Lambda0;
 		WallShadowCA[k].Mu = Mu0;
+		WallShadowCA[k].Tau = 2.0*Nu0*Lambda0;
 		WallShadowCA[k].Factor();
 	}
 }
@@ -289,7 +294,7 @@ void LidDrivenSquare()
 	{
 		WallFaceA[i]->rhoh = Rho0;
 		WallFaceA[i]->rhsCell->rho = Rho0;
-		if(VelocityBCs == WallFaceA[i]->zone)
+		if(VelocityZone == WallFaceA[i]->zone)
 		{
 			WallFaceA[i]->uh = U0;
 			WallFaceA[i]->vh = 0.0;
@@ -323,6 +328,64 @@ void TaylorCouetteAnalyticalSolution(double x,double y,double &u_A)
 	double r = sqrt(x*x + y*y);
 	u_A = A*r + B/r;	
 }
+//------------------------------------D2GHn------------------------------
+void TaylorCouetteInitialization()
+{
+	for(int n = 0;n < Faces;++n)
+	{
+		Face_2D &face = FaceArray[n];
+		face.Rho_h = Rho0;
+		if(4 == face.zone)
+		{
+			face.U_h = -W_i*TC_r*face.Vy;
+			face.V_h =  W_i*TC_r*face.Vx;
+			face.rhsCell->U = face.U_h;
+			face.rhsCell->V = face.V_h;
+		}
+		else
+		{
+			face.U_h = 0;
+			face.V_h = 0;
+			face.rhsCell->U = 0;
+			face.rhsCell->V = 0;
+		}
+		face.T_h = T0;
+		face.Lambda_h = Lambda0;
+		face.p_h = Rho0*R0*T0;
+		face.Mu_h = Mu0;
+		face.Tau_h = 2*Nu0*Lambda0;
+		face.Factor();
+	}
+	for(int n = 0;n < Cells;++n)
+	{
+		Cell_2D &cell = CellArray[n];
+		cell.Rho = Rho0;
+		cell.U = 0;
+		cell.V = 0;
+		cell.T = T0;
+		cell.Lambda = Lambda0;
+		cell.p = Rho0*R0*T0;
+		cell.Mu = Mu0;
+		cell.Tau = 2*Nu0*Lambda0;
+		cell.Factor();
+		Update_phi_Eq(cell);
+		for(int i = 0;i < DV_Qu;++i)
+		for(int j = 0;j < DV_Qv;++j)
+		{
+			cell.fT[i][j] = cell.fEq[i][j];
+		}
+	}
+	for(int k = 0;k < WallFaceNum;++k)
+	{
+		WallShadowCA[k].Rho = Rho0;
+		WallShadowCA[k].T   = T0;
+		WallShadowCA[k].Lambda = Lambda0;
+		WallShadowCA[k].Mu = Mu0;
+		WallShadowCA[k].Tau = 2.0*Nu0*Lambda0;
+		WallShadowCA[k].Factor();
+	}
+}
+//-----------------------------------D2Q9------------------------
 /*void TaylorCouetteInitialization()
 {
 	for(int i = 0;i != WallFaceNum;++i)
@@ -330,7 +393,7 @@ void TaylorCouetteAnalyticalSolution(double x,double y,double &u_A)
 		Face_2D &face = *WallFaceA[i];
 		WallFaceA[i]->rhoh = Rho0;
 		WallFaceA[i]->rhsCell->rho = Rho0;
-		if(VelocityBCs == WallFaceA[i]->zone)
+		if(VelocityZone == WallFaceA[i]->zone)
 		{
 			WallFaceA[i]->uh = -U0*face.Vy;
 			WallFaceA[i]->vh = U0*face.Vx;

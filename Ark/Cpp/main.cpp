@@ -87,12 +87,12 @@ int main()
 	Grad_LSMatrix();
 //-------------------Initialization-------------------
 	//UniformFlow();
-	LidDrivenSquare();
+	//LidDrivenSquare();
 	//ShockStructure();
 	//Riemann2D();
 	//TG_Initialization();	
 	//SquareInitialization();
-	//TaylorCouetteInitialization();
+	TaylorCouetteInitialization();
 //------------------Solve-------------------
 	#ifndef _ZERO_NDEBUG_FLIP
 	DUGKS2DSolver();

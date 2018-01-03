@@ -111,12 +111,14 @@ void Cell_2D::AllocateInCell()
 }
 void Cell_2D::Factor()
 {
+#ifndef _ARK_ISOTHERMAL_FLIP
 	Tau = Mu/p;
+	aQ = Tau/(2.0*Tau + dt*Pr);
+#endif
 	aBP = (2.0*Tau - h)/(2.0*Tau + dt);
 	bBP = 1.0 - aBP;
 	cBP = Tau*bBP;
 	aNEq = 2.0*Tau/(2.0*Tau + dt);
-	aQ = Tau/(2.0*Tau + dt*Pr);
 }
 void Cell_2D::SetVolume()
 {
@@ -168,11 +170,13 @@ Face_2D::~Face_2D()
 }
 void Face_2D::Factor()
 {
+#ifndef _ARK_ISOTHERMAL_FLIP
 	Tau_h = Mu_h/p_h;
+	aQh = Tau_h/(2.0*Tau_h + h*Pr);
+#endif
 	ah = 2.0*Tau_h/(2.0*Tau_h + h);
 	bh = 1.0 - ah;
 	ch = Tau_h*bh;
-	aQh = Tau_h/(2.0*Tau_h + h*Pr);
 }
 void Face_2D::AllocateInFace()
 {

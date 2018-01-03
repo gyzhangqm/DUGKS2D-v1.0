@@ -3,7 +3,7 @@ vpath %.cpp Cpp:Lib
 
 QModel = D2GHn
 
-CC = g++
+CC = icpc
 
 CFLAGS = -std=c++11 -I./Header -I./Lib -O3
 
@@ -12,6 +12,8 @@ MPFLAG = -fopenmp
 DIR_SRC = ./Cpp
 
 DIR_OBJ = ./Obj
+
+DIR_OUT = ../FlowField/global ../Convergence
 
 SRC = $(wildcard ${DIR_SRC}/*.cpp)
 
@@ -32,6 +34,7 @@ ${DIR_OBJ}/${QModel}.o:./Lib/${QModel}.cpp
 .PHONY:clean
 clean:
 	find ${DIR_OBJ} -name "*.o" -exec mv {} ~/.trash/ \;
+	find ${DIR_OUT} -name "*.dat" -exec rm {} \; 
 
 # headers = ZeroDeclaration.h Mesh_2D.h ZeroConstant.h $(QModel).h ZeroReference.h ZeroFlip.h
 

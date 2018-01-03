@@ -54,6 +54,8 @@ void OutputCase()
 				 <<Ma<<"    =    Mach"<<endl
 				 <<Re<<"    =    Re"<<endl
 				 <<U0<<"    =    U0"<<endl
+				 <<R0<<"    =    R0"<<endl
+				 <<T0<<"    =    T0"<<endl
 				 <<Mu0<<"    =    dynamic viscosity"<<endl
 				 <<Lambda0<<"    =    Lambda0"<<endl
 				 <<CFL<<"    =    CFL"<<endl
@@ -77,6 +79,8 @@ void OutputCase()
 				 <<Ma<<"    =    Mach"<<endl
 				 <<Re<<"    =    Re"<<endl
 				 <<U0<<"    =    U0"<<endl
+				 <<R0<<"    =    R0"<<endl
+				 <<T0<<"    =    T0"<<endl
 				 <<Mu0<<"    =    dynamic viscosity"<<endl
 				 <<Lambda0<<"    =    Lambda0"<<endl
 				 <<CFL<<"    =    CFL"<<endl

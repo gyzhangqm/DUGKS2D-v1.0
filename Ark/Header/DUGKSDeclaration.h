@@ -44,6 +44,12 @@ extern void UW_Interior_phi_Bh(Face_2D& face,Cell_2D* ptr_C,int const &i,int con
 extern void UW_Interior_phi_Bh_Limiter(Face_2D& face,Cell_2D* ptr_C,int const &i,int const &j);
 
 extern void VenkatakrishnanFluxLimiter(Cell_2D &cell,int const &i,int const &j);
+
+extern void Update_phi_Eqh(Face_2D &face,int i,int j);
+
+extern void Update_phi_h(Face_2D& face,int i,int j);
+
+extern void Update_phiFlux_h(Face_2D &face,int i,int j);
 //
 template<typename T>
 inline int MeshIndex(const T &End,const T &Beg)

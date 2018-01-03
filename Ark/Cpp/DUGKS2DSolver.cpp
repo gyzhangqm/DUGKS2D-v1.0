@@ -110,9 +110,24 @@ omp_set_num_threads(ThreadNum);
 step = 0;
 #pragma omp parallel
 {
-//while(step < 10000)
+// while(step < End_Step)
 while(ResidualPer1k > RESIDUAL)
 {
+	#ifdef _SINGLE_STEP_DEBUG_FLIP
+	// if(0==step)
+	// for(int k = 0;k < WallFaceNum;++k)
+	// {
+	// 	if(VelocityZone == WallFaceA[k]->zone)
+	// 	{
+	// 		cout <<"-------------------------"<<'\n';
+	// 		for(int i = 0;i < DV_Qu;++i)
+	// 		for(int j = 0;j < DV_Qv;++j)
+	// 		{
+	// 			cout << WallFaceA[k]->xi_n_dS[i][j]<<'\n';
+	// 		}
+	// 	}
+	// }
+	#endif
 	#pragma omp for schedule(guided)
 	for(int n = 0;n < Cells;++n)
 	{
@@ -136,7 +151,7 @@ while(ResidualPer1k > RESIDUAL)
 	 for(int n = 0;n < Cells;++n)
 	 {
 		LeastSquareABC(CellArray + n);
-		//Zero_PartialDerivatives(CellArray[n]);
+		// Zero_PartialDerivatives(CellArray[n]);
 	 }
 //-------------------------------Flux-------------------------------------
 //-------------------------------Interior Face-----------------------------	
@@ -155,14 +170,22 @@ while(ResidualPer1k > RESIDUAL)
 		{
 			Flux_2D(*InteriorFaceA[n]);
 		}
+		#ifdef _PERIODIC_12_8_BCs_FLIP
+			#pragma omp for schedule(guided)
+			for(int k = 0;k < PeriodicFaceNum;++k)
+			{
+				Flux_2D(*PeriodicFaceA[k]);
+			}
+		#endif
 	#endif
-	#ifdef _Wall_3_BCs_FLIP
+//
+#ifdef _Wall_3_BCs_FLIP
 		#pragma omp for schedule(guided)
 		for(int n = 0;n < WallFaceNum;++n)
 		{
 			Wall_3_Boundary(*WallFaceA[n]);
 		}
-	#endif
+#endif
 // //----------------------------------------Wall Face----------------------------------
 // 	#ifdef _Wall_3_BCs_FLIP
 // // 	for(int i_Wall = 0;i_Wall < WallFaceNum;++i_Wall)
@@ -405,94 +428,6 @@ void VenkatakrishnanFluxLimiter(Cell_2D &cell,int const &i,int const &j)
 	cell.gBPLimiter = MingBPLimiter;
 #endif
 }
-/*void DiffusiveScatter(Face_2D &face)
-{
-	double uu = face.uh*face.uh + face.vh*face.vh;
-	double u1,xi_dot_n;
-	double rhohWall_A = 0.0, rhohWall_b = 0.0;
-	for(int k = 0;k < Q;++k)
-	{
-		xi_dot_n = face.Vx * xi[k].u + face.Vy * xi[k].v;
-		u1 = xi[k].u*face.uh + xi[k].v*face.vh;
-		if(xi_dot_n > 0)
-		{
-			Solve_Interior_fBh(face,face.lhsCell,k);
-			rhohWall_b += xi_dot_n*(face.ah*face.fBh[k] + face.bh*ConstanceInfEq(u1,uu,k));
-			rhohWall_A += xi_dot_n*bh*omega[k];
-		}
-		else if(xi_dot_n < 0)
-		{
-			rhohWall_b += xi_dot_n*ConstanceInfEq(u1,uu,k);
-			rhohWall_A += xi_dot_n*omega[k];
-		}
-	}
-	face.rhoh = -rhohWall_b/rhohWall_A;
-	Update_fEqh(face);
-	double out = 0.0,in = 0.0;
-	for(int k = 0;k < Q;++k)
-	{
-		xi_dot_n = face.Vx * xi[k].u + face.Vy * xi[k].v;
-		if(xi_dot_n > 0)
-		{
-			face.fh[k] = face.ah*face.fBh[k] + face.bh*face.fEqh[k];
-			out += face.fh[k]*xi_dot_n;
-		}
-		else if(xi_dot_n < 0)
-		{
-			face.fh[k] = face.fEqh[k];
-			in += face.fh[k]*xi_dot_n;
-		}
-	}
-	if(in + out > 1.0E-16 || in + out < -1.0E-16)
-	{
-		cout <<in + out<<endl;
-		getchar();
-	}
-}
-
-void NonEquilibriumExtrapolation(Face_2D &face)
-{
-	Cell_2D &cell = *face.lhsCell;
-//
-	face.rhoh = cell.rho;
-//
-	Update_fEqh(face);
-	for(int k = 0;k != Q;++k)
-	{
-		face.fh[k] =  face.fEqh[k] + cell.aNEq*(cell.fT[k] - cell.fEq[k]);
-	}
-}
-void BounceBack(Face_2D &face)
-{
-	face.rhoh = face.lhsCell->rho;
-	Update_fEqh(face);
-	for(int k = 0;k < Q;++k)
-	{
-		double xi_dot_n = face.Vx * xi[k].u + face.Vy * xi[k].v;
-		if(xi_dot_n > 0.0)
-		{
-			Solve_Interior_fBh(face,face.lhsCell,k);
-		}
-	}
-	for(int k = 0;k < Q;++k)
-	{
-		double xi_dot_n = face.Vx * xi[k].u + face.Vy * xi[k].v;
-		if(xi_dot_n < 0.0)
-		{
-			double xi_dot_u = face.uh * xi[k].u + face.vh * xi[k].v;
-			if(k < 5)
-			{	
-				face.fBh[k] = face.fBh[k + 4] + 2.0*face.rhoh*omega[k]*xi_dot_u/RT;
-			}
-			else
-			{
-				face.fBh[k] = face.fBh[k - 4] + 2.0*face.rhoh*omega[k]*xi_dot_u/RT;
-			}
-
-		}
-	}
-	Update_fh(face);
-}*/
 void Update_phi_fBh(Face_2D &face)
 {
 	for(int i = 0;i < DV_Qu;++i)
@@ -561,10 +496,10 @@ void Update_phi_T(Cell_2D &cell)
 			cell.gFluxSum += cell.signFlux[k]*cell.Face_C[k]->gh[i][j];
 			#endif
 		}
-		cell.fT[i][j] = aTP*cell.fBP[i][j] - bTP*cell.fT[i][j] + cell.DtSlashVolume *cell.fFluxSum;
+		cell.fT[i][j] = aTP*cell.fBP[i][j] - bTP*cell.fT[i][j] + cell.DtSlashVolume*cell.fFluxSum;
 //isothermal flip
 		#ifndef _ARK_ISOTHERMAL_FLIP
-		cell.gT[i][j] = aTP*cell.gBP[i][j] - bTP*cell.gT[i][j] + cell.DtSlashVolume *cell.gFluxSum;
+		cell.gT[i][j] = aTP*cell.gBP[i][j] - bTP*cell.gT[i][j] + cell.DtSlashVolume*cell.gFluxSum;
 		#endif
 	}
 }
@@ -599,7 +534,7 @@ void Update_Residual(int step)
 		if(step%writeFileControl == 0)
 		Output_Flowfield(step*dt, step);
 	#ifndef _ARK_NOHUP_FLIP
-		cout << setiosflags(ios::scientific) << setprecision(6);
+		cout << setiosflags(ios::scientific) << setprecision(16);
 		cout <<step <<"    "<<step*dt<<"    "<<SumRho<<"    "<<SumT<<"    "<<ResidualPer1k<<'\n';
 	#endif
 }
