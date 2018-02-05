@@ -110,16 +110,16 @@ void DiscreteVelocityAssign()
 	}
 }
 
-void setXiDotdS()
-{
-	for(int n = 0;n < Faces;++n)
-	for(int i = 0;i < DV_Qu;++i)
-	for(int j = 0;j < DV_Qv;++j)
-	{
-		FaceArray[n].xi_n_dS[i][j] = 
-		FaceArray[n].Area*(xi_u[j]*FaceArray[n].Vx + xi_v[j]*FaceArray[n].Vy);
-	}
-}
+// void setXiDotdS()
+// {
+// 	for(int n = 0;n < Faces;++n)
+// 	for(int i = 0;i < DV_Qu;++i)
+// 	for(int j = 0;j < DV_Qv;++j)
+// 	{
+// 		FaceArray[n].xi_n_dS[i][j] = 
+// 		FaceArray[n].Area*(xi_u[j]*FaceArray[n].Vx + xi_v[j]*FaceArray[n].Vy);
+// 	}
+// }
 void Macro16(double *M16,double const &rho,double const &u,double const &v,
 				double const &T,double const &p)
 {
@@ -223,43 +223,43 @@ void IntegralShearStress()
 		cell.shearTau[1][1] = ashearTau*vectorDot(fNeq,xi_v,xi_v);
 	}
 }
-void UW_Interior_phi_Bh_Limiter(Face_2D& face,Cell_2D* ptr_C,int const &i,int const &j)
-{
-	double dx = face.xf - h*xi_u[j] - ptr_C->xc;
-	double dy = face.yf - h*xi_v[j] - ptr_C->yc;
-	VenkatakrishnanFluxLimiter(*ptr_C,i,j);
-	face.fBh[i][j] = ptr_C->fBP[i][j] + ptr_C->fBPLimiter*(dx*ptr_C->fBP_x[i][j] + dy*ptr_C->fBP_y[i][j]);
-}
-void UW_Interior_phi_Bh(Face_2D& face,Cell_2D* ptr_C,int const &i,int const &j)
-{
-	double dx = face.xf - h*xi_u[j] - ptr_C->xc;
-	double dy = face.yf - h*xi_v[j] - ptr_C->yc;
-	face.fBh[i][j] = ptr_C->fBP[i][j] + (dx*ptr_C->fBP_x[i][j] + dy*ptr_C->fBP_y[i][j]);
-}
-void CD_Interior_phi_Bh(Face_2D &face,int i,int j)
-{
-	double _dx = face.lhsCell->xc - face.rhsCell->xc;
-	double _dy = face.lhsCell->yc - face.rhsCell->yc;
-	SetZero(_dx);
-	SetZero(_dy);
-	double _fBP_xF,_fBP_yF;
-	{
-		if(0.0 == _dx)
-		{
-			 _fBP_xF =  0.5*(face.lhsCell->fBP_x[i][j] + face.rhsCell->fBP_x[i][j]);
-			 _fBP_yF = (face.lhsCell->fBP[i][j] - face.rhsCell->fBP[i][j])/_dy;
-		}
-		else if(0.0 == _dy)
-		{
-			_fBP_yF = 0.5*(face.lhsCell->fBP_y[i][j] + face.rhsCell->fBP_y[i][j]);
-			_fBP_xF = (face.lhsCell->fBP[i][j] - face.rhsCell->fBP[i][j])/_dx;
-		}
-		else
-		{
-			_PRINT_ERROR_MSG_FLIP
-			getchar();
-		}
-		face.fBh[i][j] = 0.5*(face.lhsCell->fBP[i][j] + face.rhsCell->fBP[i][j])
-				 - h*(_fBP_xF*xi_u[j] + _fBP_yF*xi_v[j]);
-	}	
-}
+// void UW_Interior_phi_Bh_Limiter(Face_2D& face,Cell_2D* ptr_C,int const &i,int const &j)
+// {
+// 	double dx = face.xf - h*xi_u[j] - ptr_C->xc;
+// 	double dy = face.yf - h*xi_v[j] - ptr_C->yc;
+// 	VenkatakrishnanFluxLimiter(*ptr_C,i,j);
+// 	face.fBh[i][j] = ptr_C->fBP[i][j] + ptr_C->fBPLimiter*(dx*ptr_C->fBP_x[i][j] + dy*ptr_C->fBP_y[i][j]);
+// }
+// void UW_Interior_phi_Bh(Face_2D& face,Cell_2D* ptr_C,int const &i,int const &j)
+// {
+// 	double dx = face.xf - h*xi_u[j] - ptr_C->xc;
+// 	double dy = face.yf - h*xi_v[j] - ptr_C->yc;
+// 	face.fBh[i][j] = ptr_C->fBP[i][j] + (dx*ptr_C->fBP_x[i][j] + dy*ptr_C->fBP_y[i][j]);
+// }
+// void CD_Interior_phi_Bh(Face_2D &face,int i,int j)
+// {
+// 	double _dx = face.lhsCell->xc - face.rhsCell->xc;
+// 	double _dy = face.lhsCell->yc - face.rhsCell->yc;
+// 	SetZero(_dx);
+// 	SetZero(_dy);
+// 	double _fBP_xF,_fBP_yF;
+// 	{
+// 		if(0.0 == _dx)
+// 		{
+// 			 _fBP_xF =  0.5*(face.lhsCell->fBP_x[i][j] + face.rhsCell->fBP_x[i][j]);
+// 			 _fBP_yF = (face.lhsCell->fBP[i][j] - face.rhsCell->fBP[i][j])/_dy;
+// 		}
+// 		else if(0.0 == _dy)
+// 		{
+// 			_fBP_yF = 0.5*(face.lhsCell->fBP_y[i][j] + face.rhsCell->fBP_y[i][j]);
+// 			_fBP_xF = (face.lhsCell->fBP[i][j] - face.rhsCell->fBP[i][j])/_dx;
+// 		}
+// 		else
+// 		{
+// 			_PRINT_ERROR_MSG_FLIP
+// 			getchar();
+// 		}
+// 		face.fBh[i][j] = 0.5*(face.lhsCell->fBP[i][j] + face.rhsCell->fBP[i][j])
+// 				 - h*(_fBP_xF*xi_u[j] + _fBP_yF*xi_v[j]);
+// 	}	
+// }

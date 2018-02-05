@@ -6,9 +6,9 @@
 //------------------------------Normalized Parameters----------------------------
 const double 
 
-CFL = 0.5,
+CFL = 0.1,
 
-dt = CFL > 0.0 ? CFL*MinL/(MaxU): 1.0E-3,
+dt = CFL > 0.0 ? CFL*MinL/(MaxU): 1.0E-4,
 
 h = 0.5*dt;
 
@@ -71,9 +71,9 @@ W_i = 0.2;
 //-----------------------------Output-------------------
 const int
 
-VelocityZone = 7,
+VelocityZone = 7,//7 == TC
 
-End_Step = 1000000,
+End_Step = 5000000,//log(2.0)/(8.0*PI*PI*Nu0*dt),
 
 ZeroDebugControl = 1000, //
 
@@ -81,10 +81,10 @@ ConvergenceControl = 100, //
 
 ResidualControl = 100, //print to screen
 
-writeFileControl = 100000;
+writeFileControl = 10000;
 
 double const
 
-RESIDUAL = 1.0E-10;
+RESIDUAL = 1.0E-8;
 
 #endif

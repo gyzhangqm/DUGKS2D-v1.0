@@ -1,6 +1,7 @@
 vpath %.h Header:Lib
 vpath %.cpp Cpp:Lib
 
+Target = TC16V101DS
 QModel = D2GHn
 
 CC = icpc
@@ -19,7 +20,7 @@ SRC = $(wildcard ${DIR_SRC}/*.cpp)
 
 objects = $(patsubst %.cpp,${DIR_OBJ}/%.o,$(notdir ${SRC})) ${DIR_OBJ}/${QModel}.o
 
-main:$(objects)
+$(Target):$(objects)
 
 	$(CC) $(objects) -o $@ ${MPFLAG}
 
@@ -33,6 +34,7 @@ ${DIR_OBJ}/${QModel}.o:./Lib/${QModel}.cpp
 
 .PHONY:clean
 clean:
+	find -name "${Target}" -exec mv {} ~/.trash/ \;
 	find ${DIR_OBJ} -name "*.o" -exec mv {} ~/.trash/ \;
 	find ${DIR_OUT} -name "*.dat" -exec rm {} \; 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import sys
 import numpy as np
 from numpy import linalg as LA
@@ -113,27 +113,32 @@ def dvGH(C,N2):
     
 def dvNC(xiMax,N):
     nXi = N
+    #add by YangZR
+    xiMax = xiMax*CC
     xiMin = -xiMax
     dv = (xiMax - xiMin)/(nXi-1)
-    nBy4 = (nXi-1)/4
+    nBy4 = (nXi-1)//4
 
     Xis = np.zeros(nXi)
     weights = np.zeros(nXi)
 
     for i in range(nXi):
         Xis[i] = xiMin + dv*i
+#   multiply by sqrt(2RT)
+#    for i in range(nXi):
+#        Xis[i] = Xis[i]*CC
          
     for i in range(nBy4):
-        weights[4*i+0] = 14.0/90*4
-        weights[4*i+1] = 32.0/90*4
-        weights[4*i+2] = 12.0/90*4
-        weights[4*i+3] = 32.0/90*4
+        weights[4*i+0] = 14.0/90    #*4
+        weights[4*i+1] = 32.0/90    #*4
+        weights[4*i+2] = 12.0/90    #*4
+        weights[4*i+3] = 32.0/90    #*4
 
-    weights[0] = 7.0/90*4
-    weights[nXi-1] = 7.0/90*4
+    weights[0] = 7.0/90     #*4
+    weights[nXi-1] = 7.0/90 #*4
 
     for i in range(nXi):
-        weights[i] = dv*weights[i]
+        weights[i] = dv*weights[i]*4 #add by YangZR
 
     return (Xis, weights)
 

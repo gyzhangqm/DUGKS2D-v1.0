@@ -78,7 +78,7 @@ int MeshConstruct(const string &s)
 	int line = 0, count = 0, index = 0,body = 0,FaceCount = 0;
 	string string_line;
 	ifstream InFile_Mesh;
-	InFile_Mesh.open("../Mesh/"+ s +".cas");
+	InFile_Mesh.open("/home/yangzr/Mesh/"+ s +".cas");
 	if(!InFile_Mesh)
 	{
 		cout << "file open failed  " <<__FILE__ <<" : "<<__LINE__<<"  "<<__func__<<endl; 
@@ -357,7 +357,70 @@ void FacesClassify()
 	AllocateFaces(V_InletFaceNum,V_InletFaceA,V_InletVec);
 	AllocateFaces(BoundFaceNum,BoundFaceA,BoundVec);
 }
-
+void ShadowCellCornerConstruct()
+{
+	double Halfdx = MinL/2.0;
+	double Halfdy = MinL/2.0;
+	PeriodicShadowC_NE = new Cell_2D();
+	PeriodicShadowC_NW = new Cell_2D();
+	PeriodicShadowC_SE = new Cell_2D();
+	PeriodicShadowC_SW = new Cell_2D();
+	for(int n = 0;n < PeriodicFaceNum;++n)
+	{
+		if
+		(
+			(fabs(PeriodicFaceA[n]->yf - Y_Beg - Halfdy) < infinitesimal)
+			&&
+			(X_Beg == PeriodicFaceA[n]->xf)
+		)
+		{
+			PeriodicShadowC_NE->ShadowC = PeriodicFaceA[n]->lhsCell;
+			PeriodicShadowC_NE->xc = PeriodicShadowC_NE->ShadowC->xc + Lx;
+			PeriodicShadowC_NE->yc = PeriodicShadowC_NE->ShadowC->yc + Ly;
+			PeriodicShadowC_NE->volume = PeriodicShadowC_NE->ShadowC->volume;
+			PeriodicShadowC_NE->celltype = PeriodicShadowC_NE->ShadowC->celltype;
+		}
+		else if
+		(
+			(fabs(PeriodicFaceA[n]->yf - Y_Beg - Halfdy) < infinitesimal)
+			&&
+			(X_End == PeriodicFaceA[n]->xf)
+		)
+		{
+			PeriodicShadowC_NW->ShadowC = PeriodicFaceA[n]->lhsCell;
+			PeriodicShadowC_NW->xc = PeriodicShadowC_NW->ShadowC->xc - Lx;
+			PeriodicShadowC_NW->yc = PeriodicShadowC_NW->ShadowC->yc + Ly;
+			PeriodicShadowC_NW->volume = PeriodicShadowC_NW->ShadowC->volume;
+			PeriodicShadowC_NW->celltype = PeriodicShadowC_NW->ShadowC->celltype;
+		}
+		else if
+		(
+			(fabs(Y_End - Halfdy - PeriodicFaceA[n]->yf) < infinitesimal)
+			&&
+			(X_Beg == PeriodicFaceA[n]->xf)
+		)
+		{
+			PeriodicShadowC_SE->ShadowC = PeriodicFaceA[n]->lhsCell;
+			PeriodicShadowC_SE->xc = PeriodicShadowC_SE->ShadowC->xc + Lx;
+			PeriodicShadowC_SE->yc = PeriodicShadowC_SE->ShadowC->yc - Ly;
+			PeriodicShadowC_SE->volume = PeriodicShadowC_SE->ShadowC->volume;
+			PeriodicShadowC_SE->celltype = PeriodicShadowC_SE->ShadowC->celltype;
+		}
+		else if
+		(
+			(fabs(Y_End - Halfdy - PeriodicFaceA[n]->yf) < infinitesimal)
+			&&
+			(X_End == PeriodicFaceA[n]->xf)
+		)
+		{
+			PeriodicShadowC_SW->ShadowC = PeriodicFaceA[n]->lhsCell;
+			PeriodicShadowC_SW->xc = PeriodicShadowC_SW->ShadowC->xc - Lx;
+			PeriodicShadowC_SW->yc = PeriodicShadowC_SW->ShadowC->yc - Ly;
+			PeriodicShadowC_SW->volume = PeriodicShadowC_SW->ShadowC->volume;
+			PeriodicShadowC_SW->celltype = PeriodicShadowC_SW->ShadowC->celltype;
+		}
+	}
+}
 void ShadowCPeriodicConstruct(int PeriodicFaceNum)
 {
 	if(0 == PeriodicFaceNum) return;
@@ -400,6 +463,9 @@ void ShadowCPeriodicConstruct(int PeriodicFaceNum)
 			++k;
 		}
 	}
+	#ifdef _CARTESIAN_MESH_FLIP
+	ShadowCellCornerConstruct();
+	#endif
 }
 void ShadowCBoundConstruct(int BoundFaceNum,Face_2D** &ptrFaceA,Cell_2D* &ptrShadowCA)
 {
@@ -410,6 +476,7 @@ void ShadowCBoundConstruct(int BoundFaceNum,Face_2D** &ptrFaceA,Cell_2D* &ptrSha
 		ptrFaceA[i]->rhsCell = ptrShadowCA + i;
 		ptrShadowCA[i].Face_C[0] = ptrFaceA[i];
 		//PushCell(*ptrFaceA[i]->lhsCell,ptrShadowCA + i);
+		ptrShadowCA[i].ShadowC = ptrFaceA[i]->lhsCell;
 		ptrShadowCA[i].Cell_C[0] = ptrFaceA[i]->lhsCell;
 		if(3 == ptrFaceA[i]->bc_type)
 		{
@@ -440,7 +507,7 @@ void ShadowCellCheck(int BoundFaceNum,const Cell_2D* const &BoundShadowCA,const 
 {
 	for(int i = 0;i < BoundFaceNum;++i)
 	{
-		if(nullptr != BoundShadowCA[i].ShadowC)
+		if(nullptr == BoundShadowCA[i].ShadowC)
 		{
 			_PRINT_ERROR_MSG_FLIP
 			cout << s <<" : i = "<<i<<" ShadowC != nullptr"<<endl;
@@ -460,14 +527,112 @@ void ShadowCellCheck(int BoundFaceNum,const Cell_2D* const &BoundShadowCA,const 
 		}
 	}
 }
+void sortFacesInThisCell(Cell_2D &cell)
+{
+	Face_2D *Facetmp[4] = {nullptr,nullptr,nullptr,nullptr};
+	for(int i = 0;i < cell.celltype;++i)
+	{
+		if(fabs(cell.Face_C[i]->xf - cell.xc) > infinitesimal)
+		{
+			if(cell.Face_C[i]->xf > cell.xc)
+			{
+				Facetmp[0] = cell.Face_C[i];
+			}
+			else
+			{
+				Facetmp[2] = cell.Face_C[i];
+			}
+		}
+		else
+		{
+			if(cell.Face_C[i]->yf > cell.yc)
+			{
+				Facetmp[1] = cell.Face_C[i];
+			}
+			else
+			{
+				Facetmp[3] = cell.Face_C[i];
+			}
+		}
+	}
+	for(int i = 0;i < cell.celltype;++i)
+	{
+		cell.Face_C[i] = Facetmp[i];
+	}
+}
 void NeighbourCellConstruct()
 {
 	for(int n = 0;n < Cells;++n)
 	for(int i = 0;i < CellArray[n].celltype;++i)
 	{
+	#ifdef _CARTESIAN_MESH_FLIP
+		sortFacesInThisCell(CellArray[n]);
+	#endif
 	CellArray[n].Cell_C[i] = ((CellArray[n].Face_C[i] -> lhsCell ==  (CellArray + n)) ? 
-					CellArray[n].Face_C[i] -> rhsCell :CellArray[n].Face_C[i] -> lhsCell);
+					CellArray[n].Face_C[i] -> rhsCell : CellArray[n].Face_C[i] -> lhsCell);
 	CellArray[n].signFlux[i] = ((CellArray[n].Face_C[i] -> lhsCell ==  (CellArray + n)) ? -1 : 1);
+	}
+}
+void DiagonalCellConstruct()
+{
+	int ne = 0,nw = 0,se = 0,sw = 0;
+	for(int n = 0;n < Cells;++n)
+	{
+	//---------------------------------Diagonal 0 3------------------------
+		if(nullptr == CellArray[n].Cell_C[0]->ShadowC)
+		{
+			CellArray[n].Cell_Diag[0] = CellArray[n].Cell_C[0]->Cell_C[1];
+			CellArray[n].Cell_Diag[3] = CellArray[n].Cell_C[0]->Cell_C[3];
+		}
+		else
+		{
+			if(nullptr == CellArray[n].Cell_C[1]->ShadowC)
+			{
+				CellArray[n].Cell_Diag[0] = CellArray[n].Cell_C[1]->Cell_C[0];
+			}
+			else
+			{
+				CellArray[n].Cell_Diag[0] = PeriodicShadowC_NE;
+				++ne;
+			}
+			if(nullptr == CellArray[n].Cell_C[3]->ShadowC)
+			{
+				CellArray[n].Cell_Diag[3] = CellArray[n].Cell_C[3]->Cell_C[0];
+			}
+			else
+			{
+				CellArray[n].Cell_Diag[3] = PeriodicShadowC_SE;
+				++se;
+			}
+		}
+	//---------------------------------Diagonal 1 2------------------------
+		if(nullptr == CellArray[n].Cell_C[2]->ShadowC)
+		{
+			CellArray[n].Cell_Diag[1] = CellArray[n].Cell_C[2]->Cell_C[1];
+			CellArray[n].Cell_Diag[2] = CellArray[n].Cell_C[2]->Cell_C[3];
+		}
+		else
+		{
+			if(nullptr == CellArray[n].Cell_C[1]->ShadowC)
+			{
+				CellArray[n].Cell_Diag[1] = CellArray[n].Cell_C[1]->Cell_C[2];
+			}
+			else
+			{
+				CellArray[n].Cell_Diag[1] = PeriodicShadowC_NW;
+				++nw;
+			}
+			if(nullptr == CellArray[n].Cell_C[3]->ShadowC)
+			{
+				CellArray[n].Cell_Diag[2] = CellArray[n].Cell_C[3]->Cell_C[2];
+			}
+			else
+			{
+				CellArray[n].Cell_Diag[2] = PeriodicShadowC_SW;
+				++sw;
+			}
+		}
+	//---------------------------------Diagonal 2------------------------
 	}
 }
 void LSCellMatrix(Cell_2D* const &Center,int k,
@@ -530,6 +695,15 @@ void Grad_LSMatrix()
 		InverseMatrix_2_2(center->LS_M);
 	}
 	cout <<"LeastSquare Matrix Construction Done" << endl;
+}
+void setXiDotdS()
+{
+	for(int n = 0;n < Faces;++n)
+	for(int i = 0;i < DV_Qu;++i)
+	for(int j = 0;j < DV_Qv;++j)
+	{
+		FaceArray[n].xi_n_dS[i][j] = FaceArray[n].Area*((xi_u[QuIndex])*FaceArray[n].Vx + xi_v[j]*FaceArray[n].Vy);
+	}
 }
 int MeshCheck()
 {

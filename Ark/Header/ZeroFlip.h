@@ -16,11 +16,14 @@
 // #define _CARTESIAN_LS_DEBUG_FLIP
 // #endif
 
-#ifndef _SINGLE_STEP_DEBUG_FLIP
-#define _SINGLE_STEP_DEBUG_FLIP
-#endif
+// #ifndef _SINGLE_STEP_DEBUG_FLIP
+// #define _SINGLE_STEP_DEBUG_FLIP
+// #endif
 //----------------------------------------------------------
 //----------------------------------------------------------
+// #ifndef _CARTESIAN_MESH_FLIP
+// #define _CARTESIAN_MESH_FLIP
+// #endif
 
 #ifndef _MESHTYPE_ARK
 #define _MESHTYPE_ARK "Quad"
@@ -36,17 +39,13 @@
 #endif
 
 #ifndef _QMODEL_ARK
-#define _QMODEL_ARK "D2GHn"
+#define _QMODEL_ARK "D2GH8"
 #endif
 
 #ifndef _MESHFILE_NAME_ARK
 #define _MESHFILE_NAME_ARK "_Quad_Wall_Bicylinder"
 #endif
 //----------------Boundary Condition Macro------------------
-/*#ifndef _CARTESIAN_MESH_FLIP
-#define _CARTESIAN_MESH_FLIP
-#endif*/
-
 
 // #ifndef _P_INLET_4_BCS_FLIP
 // #define _P_INLET_4_BCS_FLIP
@@ -62,14 +61,12 @@
 
 #ifndef _Wall_3_BCs_FLIP
 #define _Wall_3_BCs_FLIP
-	/*#ifndef _BB_BOUNDARY_SCHEME_FLIP
-	#define _BB_BOUNDARY_SCHEME_FLIP
-	#endif*/
-//
-// 	#ifndef _NEE_BOUNDARY_SCHEME_FLIP
-// 	#define _NEE_BOUNDARY_SCHEME_FLIP
-// 	#endif
 #endif
+//-------------------------------Force model------------------------------
+
+// #ifndef _ARK_FORCE_FLIP
+// #define _ARK_FORCE_FLIP
+// #endif
 
 //-------------------------------Isothermal-------------------------------
 #ifndef _ARK_ISOTHERMAL_FLIP

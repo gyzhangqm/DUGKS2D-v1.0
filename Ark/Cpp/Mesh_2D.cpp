@@ -14,7 +14,9 @@ void AllocateARK(double** &f,int const Qu,int const Qv)
 void DeallocateARK(double** &f,int const Qu,int const Qv)
 {
 	for(int i = 0;i < Qu;++i)
+	{
 		delete[] f[i];
+	}
 	delete[] f;
 }
 
@@ -31,6 +33,9 @@ Cell_2D::Cell_2D(const Cell_2D &rhs)
 	gBP_y = rhs.gBP_y;
 	gT    = rhs.gT;
 	gEq   = rhs.gEq;
+
+	force = rhs.force;
+//
 	use   = rhs.use;
 //
 	++*rhs.use;
@@ -38,7 +43,7 @@ Cell_2D::Cell_2D(const Cell_2D &rhs)
 Cell_2D& Cell_2D::operator=(const Cell_2D &rhs)
 {
 	++*rhs.use;
-	if(--*use == 0)
+	if(nullptr != use && --*use == 0)
 	{	
 		DeallocateARK(fBP,Qu,Qv);
 		DeallocateARK(fBP_x,Qu,Qv);
@@ -52,6 +57,10 @@ Cell_2D& Cell_2D::operator=(const Cell_2D &rhs)
 		DeallocateARK(gBP_y,Qu,Qv);
 		DeallocateARK(gT,Qu,Qv);
 		DeallocateARK(gEq,Qu,Qv);
+#endif
+//
+#ifdef  _ARK_FORCE_FLIP
+		DeallocateARK(force,Qu,Qv);
 #endif
 		delete use;
 	}
@@ -67,12 +76,14 @@ Cell_2D& Cell_2D::operator=(const Cell_2D &rhs)
 	gT    = rhs.gT;
 	gEq   = rhs.gEq;
 //
+	force = rhs.force;
+//
 	use   = rhs.use;
 	return *this;
 }
 Cell_2D::~Cell_2D()
 {
-	if(--*use == 0)
+	if(nullptr != use && --*use == 0)
 	{	
 		DeallocateARK(fBP,Qu,Qv);
 		DeallocateARK(fBP_x,Qu,Qv);
@@ -88,6 +99,9 @@ Cell_2D::~Cell_2D()
 		DeallocateARK(gEq,Qu,Qv);
 #endif
 //
+#ifdef  _ARK_FORCE_FLIP
+		DeallocateARK(force,Qu,Qv);
+#endif
 		delete use;
 	}
 }
@@ -107,6 +121,9 @@ void Cell_2D::AllocateInCell()
 	AllocateARK(gEq,Qu,Qv);
 #endif
 //
+#ifdef  _ARK_FORCE_FLIP
+	AllocateARK(force,Qu,Qv);
+#endif
 	use = new int(1);
 }
 void Cell_2D::Factor()
@@ -117,7 +134,9 @@ void Cell_2D::Factor()
 #endif
 	aBP = (2.0*Tau - h)/(2.0*Tau + dt);
 	bBP = 1.0 - aBP;
+#ifdef _ARK_FORCE_FLIP
 	cBP = Tau*bBP;
+#endif
 	aNEq = 2.0*Tau/(2.0*Tau + dt);
 }
 void Cell_2D::SetVolume()
@@ -165,6 +184,9 @@ Face_2D::~Face_2D()
 #endif
 		DeallocateARK(xi_n_dS,Qu,Qv);
 //
+#ifdef _ARK_FORCE_FLIP
+		DeallocateARK(forceh,Qu,Qv);
+#endif
 		delete use;
 	}
 }
@@ -176,7 +198,9 @@ void Face_2D::Factor()
 #endif
 	ah = 2.0*Tau_h/(2.0*Tau_h + h);
 	bh = 1.0 - ah;
+#ifdef _ARK_FORCE_FLIP
 	ch = Tau_h*bh;
+#endif
 }
 void Face_2D::AllocateInFace()
 {
@@ -189,7 +213,12 @@ void Face_2D::AllocateInFace()
 	AllocateARK(gBh,Qu,Qv);
 	AllocateARK(gEqh,Qu,Qv);
 #endif
+//
 	AllocateARK(xi_n_dS,Qu,Qv);
+//
+#ifdef _ARK_FORCE_FLIP
+	AllocateARK(forceh,Qu,Qv);
+#endif
 //
 	use = new int(1);
 }

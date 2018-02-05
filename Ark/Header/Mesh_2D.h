@@ -34,10 +34,13 @@ struct Face_2D{
 	double **gh    = nullptr;
 	double **gBh   = nullptr;
 	double **gEqh  = nullptr;
+
+	double **forceh = nullptr;
 	static int const Qu = DV_Qu;
 	static int const Qv = DV_Qv;
 	void AllocateInFace();
 //-----------macro variables---------------------
+	double Fx_h = 0, Fy_h = 0;
 	double Rho_h = 0.0,U_h = 0.0,V_h = 0.0,p_h = 0.0,T_h = 0.0;
 	double Lambda_h = 0.0,E_h = 0.0,qx_h = 0.0,qy_h = 0.0;
 	double Mu_h = 0.0,Tau_h = 0.0;
@@ -54,7 +57,8 @@ struct Cell_2D{
 	Cell_2D(const Cell_2D &rhs);
 	Cell_2D& operator=(const Cell_2D &rhs);
 	~Cell_2D();
-
+	static int const Qu = DV_Qu;
+	static int const Qv = DV_Qv;
 //-----------Mesh------------------
 	Cell_2D *ShadowC = nullptr;
 	int celltype = 0;
@@ -63,6 +67,7 @@ struct Cell_2D{
 	double *NodeY_C[4] = {nullptr,nullptr,nullptr,nullptr}; 
 	Cell_2D *Cell_C[4] = {nullptr,nullptr,nullptr,nullptr};
 	Face_2D *Face_C[4] = {nullptr,nullptr,nullptr,nullptr};
+	Cell_2D *Cell_Diag[4] = {nullptr,nullptr,nullptr,nullptr};
 	int signFlux[4] = {0};
 //---------------------------------------------------------
 	double LS_M[2][2] = {{0.0,0.0},{0.0,0.0}};
@@ -81,11 +86,12 @@ struct Cell_2D{
 	double **gBP_y = nullptr;
 	double **gT    = nullptr;
 	double **gEq   = nullptr;
-	static int const Qu = DV_Qu;
-	static int const Qv = DV_Qv;
+
+	double **force = nullptr;
 	void AllocateInCell();
 //----------macro variables---------------------
 	double fFluxSum = 0, gFluxSum = 0;
+	double Fx = 0, Fy = 0;
 	double U = 0.0,V = 0.0, Rho = 0.0, p = 0.0,E = 0.0,qx = 0.0,qy = 0.0;
 	double shearTau[2][2] =  {{0.0,0.0},{0.0,0.0}};
 	double Lambda = 0.0,T = 0.0,Tau = 0.0,Mu = 0.0;
@@ -94,8 +100,8 @@ struct Cell_2D{
 	double aBP = 0.0, bBP = 0.0, cBP = 0.0,aNEq = 0.0,aQ = 0.0;
 	double fBPLimiter = 1,gBPLimiter = 1;
 	void Factor();
-private:
-	int *use = new int(1);
+//private:
+	int *use = nullptr;
 };
 
 inline 

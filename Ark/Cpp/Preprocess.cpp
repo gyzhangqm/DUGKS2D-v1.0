@@ -15,11 +15,17 @@ void UniformFlow()
 			CellArray[n].V = V0;
 			CellArray[n].T = T0;
 			CellArray[n].p = Rho0*R0*T0;
-			CellArray[n].Lambda = 0.5/(T0*R0);
+			#ifdef _ARK_FORCE_FLIP
+			CellArray[n].Fx = 0.0;
+			CellArray[n].Fy = 0.0;
+			#endif
+			CellArray[n].Lambda = Lambda0;
 			CellArray[n].qx = 0;
 			CellArray[n].qy = 0;
 			CellArray[n].Mu = Mu0;
+			#ifdef _ARK_ISOTHERMAL_FLIP
 			CellArray[n].Tau = 2.0*Nu0*Lambda0;
+			#endif
 			CellArray[n].Factor();
 			Update_phi_Eq(CellArray[n]);
 			for(int i = 0;i < DV_Qu;++i)
@@ -39,25 +45,16 @@ void UniformFlow()
 			FaceArray[n].V_h = V0;
 			FaceArray[n].T_h = T0;
 			FaceArray[n].p_h = Rho0*R0*T0;
-			FaceArray[n].Lambda_h = 0.5/(T0*R0);
+			FaceArray[n].Lambda_h = Lambda0;
+			#ifdef _ARK_FORCE_FLIP
+			FaceArray[n].Fx_h = 0.0;
+			FaceArray[n].Fy_h = 0.0;
+			#endif
 			FaceArray[n].Mu_h = Mu0;
 			FaceArray[n].Tau_h = 2.0*Nu0*Lambda0;
 			FaceArray[n].Factor();
-			for(int i = 0;i < DV_Qu;++i)
-			for(int j = 0;j < DV_Qv;++j)
-			{
-				FaceArray[n].fEqh[i][j] = FaceArray[n].lhsCell->fEq[i][j];
-				FaceArray[n].fBh[i][j] = FaceArray[n].fEqh[i][j];
-				FaceArray[n].fh[i][j] = FaceArray[n].fEqh[i][j];
-//isothermal
-#ifndef _ARK_ISOTHERMAL_FLIP
-				FaceArray[n].gEqh[i][j] = FaceArray[n].lhsCell->gEq[i][j];
-				FaceArray[n].gBh[i][j] = FaceArray[n].gEqh[i][j];
-				FaceArray[n].gh[i][j] = FaceArray[n].gEqh[i][j];
-#endif
-			}
 		}
-		#ifdef _P_INLET_4_BCS_FLIP
+#ifdef _P_INLET_4_BCS_FLIP
 		for(int k = 0;k < P_InletFaceNum;++k)
 		{
 			for(int i = 0;i < DV_Qu;++i)
@@ -67,14 +64,14 @@ void UniformFlow()
 				P_InletShadowCA[k].fBP_x[i][j] = 0;
 				P_InletShadowCA[k].fBP_y[i][j] = 0;
 //isothermal
-#ifndef _ARK_ISOTHERMAL_FLIP
+			#ifndef _ARK_ISOTHERMAL_FLIP
 				P_InletShadowCA[k].gBP[i][j] = P_InletShadowCA[k].Cell_C[0]->gEq[i][j];
 				P_InletShadowCA[k].gBP_x[i][j] = 0;
 				P_InletShadowCA[k].gBP_y[i][j] = 0;
-#endif			
+			#endif			
 			}
 		}
-		#endif
+#endif
 		#ifdef _P_OUTLET_5_BCS_FLIP
 			for(int k = 0;k < P_OutletFaceNum;++k)
 			{
@@ -85,11 +82,11 @@ void UniformFlow()
 					P_OutletShadowCA[k].fBP_x[i][j] = 0;
 					P_OutletShadowCA[k].fBP_y[i][j] = 0;
 //isothermal
-#ifndef _ARK_ISOTHERMAL_FLIP
+					#ifndef _ARK_ISOTHERMAL_FLIP
 					P_OutletShadowCA[k].gBP[i][j] = P_OutletShadowCA[k].Cell_C[0]->gEq[i][j];
 					P_OutletShadowCA[k].gBP_x[i][j] = 0;
 					P_OutletShadowCA[k].gBP_y[i][j] = 0;
-#endif					
+					#endif					
 				}
 			}
 		#endif
@@ -189,6 +186,7 @@ void ShockStructure()
 	}
 #endif
 }
+//
 void TaylorGreenVortex(double t,double x,double y,double &u, double &v, double &p)
 {
 	/*u = -U0*cos(2.0*PI*x)*sin(2.0*PI*y)*exp(-8.0*PI*PI*nu*t);
@@ -198,7 +196,75 @@ void TaylorGreenVortex(double t,double x,double y,double &u, double &v, double &
 	v =  U0*sin(2.0*PI*x)*cos(2.0*PI*y)*exp(-8.0*PI*PI*Nu0*t)/(2.0*PI);
 	p = -0.25*U0*U0*(cos(4.0*PI*x) + cos(4.0*PI*y))*exp(-16.0*PI*PI*Nu0*t)/(4.0*PI*PI);
 }
+//-----------------------------------ForceDrivenTG-------------------------------
+void AnalyticalForceDrivenTG(double x,double y,double &u_A, double &v_A,double &p_A)
+{
+	u_A = U0*sin(2.0*PI*x)*sin(2.0*PI*y);
+	v_A = U0*cos(2.0*PI*x)*cos(2.0*PI*y);
+	p_A = 0.25*Rho0*U0*U0*(cos(4.0*PI*x)-cos(4.0*PI*y));
+}
 
+void ForceDrivenTG()
+{
+	for(int n = 0;n < Cells;++n)
+	{
+		
+		AnalyticalForceDrivenTG
+		(
+			CellArray[n].xc,CellArray[n].yc,CellArray[n].U,CellArray[n].V,CellArray[n].p
+		);
+// CellArray[n].U = U0*sin(2.0*PI*CellArray[n].xc)*sin(2.0*PI*CellArray[n].yc);
+// CellArray[n].V = U0*cos(2.0*PI*CellArray[n].xc)*cos(2.0*PI*CellArray[n].yc);
+// CellArray[n].p = 0.25*Rho0*U0*U0*(cos(4.0*PI*CellArray[n].xc)-cos(4.0*PI*CellArray[n].yc));
+		CellArray[n].Rho = Rho0 + 2.0*CellArray[n].p*Lambda0;
+		CellArray[n].T = T0;
+		CellArray[n].Mu = Mu0;
+		CellArray[n].Lambda = Lambda0;
+		#ifdef _ARK_FORCE_FLIP
+		CellArray[n].Fx = 8.0*PI*PI*Nu0*CellArray[n].U;
+		CellArray[n].Fy = 8.0*PI*PI*Nu0*CellArray[n].V;
+		#endif
+		CellArray[n].Tau = 2.0*Nu0*Lambda0;
+		CellArray[n].Factor();
+		Update_phi_Eq(CellArray[n]);
+		for(int i = 0;i < DV_Qu;++i)
+		for(int j = 0;j < DV_Qv;++j)
+		{
+			CellArray[n].fT[i][j] = CellArray[n].fEq[i][j];
+		}
+	}
+	for(int k = 0;k < PeriodicFaceNum;++k)
+	{
+		PeriodicShadowCA[k].Rho = PeriodicShadowCA[k].ShadowC->Rho;
+		PeriodicShadowCA[k].U   = PeriodicShadowCA[k].ShadowC->U;
+		PeriodicShadowCA[k].V   = PeriodicShadowCA[k].ShadowC->V;
+		PeriodicShadowCA[k].T   = PeriodicShadowCA[k].ShadowC->T;
+		PeriodicShadowCA[k].p   = PeriodicShadowCA[k].ShadowC->p;
+		PeriodicShadowCA[k].Mu  = PeriodicShadowCA[k].ShadowC->Mu;
+		PeriodicShadowCA[k].Lambda = PeriodicShadowCA[k].ShadowC->Lambda;
+		#ifdef _ARK_FORCE_FLIP
+		PeriodicShadowCA[k].Fx = PeriodicShadowCA[k].ShadowC->Fx;
+		PeriodicShadowCA[k].Fy = PeriodicShadowCA[k].ShadowC->Fy;
+		#endif
+		PeriodicShadowCA[k].Tau = 2.0*Nu0*Lambda0;
+		PeriodicShadowCA[k].Factor();
+	}
+	for(int n = 0;n < Faces;++n)
+	{
+		double x = FaceArray[n].xf, y = FaceArray[n].yf;
+		#ifdef _ARK_FORCE_FLIP
+		FaceArray[n].Fx_h = 0.5*(FaceArray[n].rhsCell->Fx + FaceArray[n].lhsCell->Fx);
+		FaceArray[n].Fy_h = 0.5*(FaceArray[n].rhsCell->Fy + FaceArray[n].lhsCell->Fy);
+		#endif
+		//FaceArray[n].Fx_h = 8.0*PI*PI*Nu0*U0*sin(2.0*PI*x)*sin(2.0*PI*y);
+		//FaceArray[n].Fy_h = 8.0*PI*PI*Nu0*U0*cos(2.0*PI*x)*cos(2.0*PI*y);
+		FaceArray[n].T_h = T0;
+		FaceArray[n].Mu_h = Mu0;
+		FaceArray[n].Lambda_h = Lambda0;
+		FaceArray[n].Tau_h = 2.0*Nu0*Lambda0;
+		FaceArray[n].Factor();
+	}
+}
 /*void TG_Initialization()
 {	
 	for(int i = 0;i != Cells;++i)

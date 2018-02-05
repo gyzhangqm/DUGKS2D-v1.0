@@ -1,6 +1,8 @@
 #ifndef _ARK_D2V16_H
 #define _ARK_D2V16_H
 //
+#define QuIndex j
+//
 #include "ZeroReference.h"
 //
 int const 

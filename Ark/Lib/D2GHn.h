@@ -1,17 +1,19 @@
 #ifndef _ARK_D2GHn_H
 #define _ARK_D2GHn_H
 
+#define QuIndex i
+
 #include "ZeroReference.h"
 
 int const 
 
-DV_Qu = 8, 
+DV_Qu = 101, 
 
-DV_Qv = 8;
+DV_Qv = 101;
 
 double const
 
-MaSpan = 1.5,
+MaSpan = 4.0,
 
 Eta = 0,
 

@@ -33,6 +33,9 @@ Cell_2D *PeriodicShadowCA = nullptr, *WallShadowCA = nullptr,*P_InletShadowCA = 
 		*P_OutletShadowCA = nullptr,*SymmetryShadowCA = nullptr,*P_FarfieldShadowCA = nullptr,
 		*V_InletShadowCA = nullptr;
 
+Cell_2D *PeriodicShadowC_NE = nullptr, *PeriodicShadowC_NW = nullptr,
+	    *PeriodicShadowC_SE = nullptr, *PeriodicShadowC_SW = nullptr;
+
 int step = 0;
 double SumRho = 0.0, SumT = 0.0;
 //--------------MeshConstruct.cpp----------------
@@ -41,6 +44,7 @@ extern int MeshArea();
 extern void FacesClassify();
 extern int ShadowCellConstruct();
 extern void NeighbourCellConstruct();
+extern void DiagonalCellConstruct();
 extern int MeshCheck();
 extern int MeshOutput(const string& s);
 extern void  Grad_LSMatrix();
@@ -50,6 +54,7 @@ extern void setXiDotdS();
 //--------------main.cpp---------------------
 extern void AllocateResource();
 extern void DeallocateResource();
+extern void AllocateShadowCorners();
 //-------------Preprocess.cpp-------------------
 extern void TG_Initialization();
 extern void TaylorCouetteInitialization();
@@ -57,6 +62,8 @@ extern void ShockStructure();
 extern void UniformFlow();
 extern void Riemann2D();
 extern void LidDrivenSquare();
+extern void ForceDrivenTG();
+extern void unsteadyTaylorGreen();
 //----------------Inc_2DSolver.cpp----------------
 extern void DUGKS2DSolver();
 //--------------Output.cpp------------------------
@@ -78,6 +85,9 @@ int main()
 	FacesClassify();
 	ShadowCellConstruct();
 	NeighbourCellConstruct();
+	#ifdef _CARTESIAN_MESH_FLIP
+	DiagonalCellConstruct();
+	#endif
 	#ifdef _ZERO_NDEBUG_FLIP
 	MeshCheck();
 	MeshOutput(MeshName);
@@ -92,7 +102,9 @@ int main()
 	//Riemann2D();
 	//TG_Initialization();	
 	//SquareInitialization();
+	//unsteadyTaylorGreen();
 	TaylorCouetteInitialization();
+	//ForceDrivenTG();
 //------------------Solve-------------------
 	#ifndef _ZERO_NDEBUG_FLIP
 	DUGKS2DSolver();
@@ -198,7 +210,25 @@ void AllocateResource()
 	{
 		PeriodicShadowCA[n] = *PeriodicShadowCA[n].ShadowC;
 	}
+	#ifdef _CARTESIAN_MESH_FLIP
+	AllocateShadowCorners();
+	#endif
 	cout <<"Allocating Resources for Cells Done"<<endl;
+}
+void AllocateShadowCorners()
+{
+	*PeriodicShadowC_SW = *(PeriodicShadowC_SW->ShadowC);
+	*PeriodicShadowC_SE = *(PeriodicShadowC_SE->ShadowC);
+	*PeriodicShadowC_NW = *(PeriodicShadowC_NW->ShadowC);
+	*PeriodicShadowC_NE = *(PeriodicShadowC_NE->ShadowC);
+
+}
+void DeallocateShadowCorners()
+{
+	delete PeriodicShadowC_SW;
+	delete PeriodicShadowC_SE;
+	delete PeriodicShadowC_NW;
+	delete PeriodicShadowC_NE;
 }
 void DeallocateFaces(int BoundFaceNum, Face_2D** &ptrBoundFaceA)
 {
@@ -233,5 +263,8 @@ void DeallocateResource()
 	DeallocateCells(SymmetryFaceNum,SymmetryShadowCA);
 	DeallocateCells(P_FarfieldFaceNum,P_FarfieldShadowCA);
 	DeallocateCells(V_InletFaceNum,V_InletShadowCA);
-	//DeallocateCells(PeriodicFaceNum,PeriodicShadowCA);
+	DeallocateCells(PeriodicFaceNum,PeriodicShadowCA);
+	#ifdef _CARTESIAN_MESH_FLIP
+	DeallocateShadowCorners();
+	#endif
 }

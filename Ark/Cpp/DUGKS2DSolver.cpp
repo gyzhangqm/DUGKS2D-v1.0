@@ -41,6 +41,12 @@ extern void WallShadowC_fBP(Cell_2D &shadowCell);
 
 extern void Wall_3_Boundary(Face_2D &face);
 
+//----------------------------------------------------------
+
+extern void Update_force(Cell_2D &cell);
+
+extern void Update_force_h(Face_2D &face);
+
 //----------------------------------DEBUG---------------------------------------
 extern void Output_fBh(Face_2D& face,double t);
 
@@ -110,31 +116,20 @@ omp_set_num_threads(ThreadNum);
 step = 0;
 #pragma omp parallel
 {
-// while(step < End_Step)
+//while(step < End_Step)
 while(ResidualPer1k > RESIDUAL)
+//while(true)
 {
-	#ifdef _SINGLE_STEP_DEBUG_FLIP
-	// if(0==step)
-	// for(int k = 0;k < WallFaceNum;++k)
-	// {
-	// 	if(VelocityZone == WallFaceA[k]->zone)
-	// 	{
-	// 		cout <<"-------------------------"<<'\n';
-	// 		for(int i = 0;i < DV_Qu;++i)
-	// 		for(int j = 0;j < DV_Qv;++j)
-	// 		{
-	// 			cout << WallFaceA[k]->xi_n_dS[i][j]<<'\n';
-	// 		}
-	// 	}
-	// }
-	#endif
 	#pragma omp for schedule(guided)
 	for(int n = 0;n < Cells;++n)
 	{
 		Update_phi_Eq(CellArray[n]);
+		#ifdef _ARK_FORCE_FLIP
+		Update_force(CellArray[n]);
+		#endif
 		Update_phi_BP(CellArray[n]);
 	}
-//--------------------------------------Update-fBP--------------------------------
+//--------------------------------------Update-shadow fBP--------------------------------
 	#ifdef _Wall_3_BCs_FLIP
 	#pragma omp for schedule(guided)
 	for(int n = 0;n < WallFaceNum;++n)
@@ -146,7 +141,7 @@ while(ResidualPer1k > RESIDUAL)
 	#ifdef _P_OUTLET_5_BCS_FLIP
 		P_Outlet_5_Boundary();
 	#endif
-//-------------------------------LeastSquare------------------------------
+//-------------------------------Update Grad fBP-------------------------------
 	 #pragma omp for schedule(guided)
 	 for(int n = 0;n < Cells;++n)
 	 {
@@ -335,6 +330,9 @@ void Update_phi_BP(Cell_2D& cell)
 	for(int j = 0;j < DV_Qv;++j)
 	{
 		cell.fBP[i][j] = cell.aBP*cell.fT[i][j] + cell.bBP*cell.fEq[i][j];
+		#ifdef _ARK_FORCE_FLIP
+		cell.fBP[i][j] += cell.cBP*cell.force[i][j];
+		#endif
 //isothermal flip
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		cell.gBP[i][j] = cell.aBP*cell.gT[i][j] + cell.bBP*cell.gEq[i][j];
@@ -347,6 +345,9 @@ void Update_phi_h(Face_2D& face)
 	for(int j = 0;j < DV_Qv;++j)
 	{
 		face.fh[i][j] = face.ah*face.fBh[i][j] + face.bh*face.fEqh[i][j];
+		#ifdef _ARK_FORCE_FLIP
+		face.fh[i][j] += face.ch*face.forceh[i][j];
+		#endif
 //isothermal flip
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		face.gh[i][j] = face.ah*face.gBh[i][j] + face.bh*face.gEqh[i][j];
@@ -375,7 +376,9 @@ void VenkatakrishnanFluxLimiter(Cell_2D &cell,int const &i,int const &j)
 	double GradfBPDotDelta[4],LfBP[4];
 	double GradgBPDotDelta[4],LgBP[4];
 //
-	double MaxfBP = -1E+5,MinfBP = -MaxfBP, MaxgBP = -1E+5,MingBP = -MaxgBP;
+	// double MaxfBP = -1E+5,MinfBP = -MaxfBP, MaxgBP = -1E+5,MingBP = -MaxgBP;
+	double MaxfBP = cell.fBP[i][j],MinfBP = cell.fBP[i][j];
+	double MaxgBP = cell.gBP[i][j],MingBP = cell.gBP[i][j];
 	double MinfBPLimiter = 1,MingBPLimiter = 1;
 //	
 	for(int iFace = 0;iFace < cell.celltype;++iFace)
@@ -428,6 +431,82 @@ void VenkatakrishnanFluxLimiter(Cell_2D &cell,int const &i,int const &j)
 	cell.gBPLimiter = MingBPLimiter;
 #endif
 }
+void Update_force(Cell_2D &cell)
+{
+	for(int i = 0;i < DV_Qu;++i)
+	for(int j = 0;j < DV_Qv;++j)
+	{
+		cell.force[i][j] = cell.Fx * (xi_u[QuIndex]-cell.U) + cell.Fy * (xi_v[j]-cell.V);
+		cell.force[i][j] *= cell.fEq[i][j]/(Rho0*RT);
+	}
+}
+void Update_force_h(Face_2D &face)
+{
+	for(int i = 0;i < DV_Qu;++i)
+	for(int j = 0;j < DV_Qv;++j)
+	{
+		face.forceh[i][j] = face.Fx_h*(xi_u[QuIndex]-face.U_h)+face.Fy_h*(xi_v[j]-face.V_h);
+		face.forceh[i][j] *= face.fEqh[i][j]/(Rho0*RT);
+	}
+}
+void UW_Interior_phi_Bh_Limiter(Face_2D& face,Cell_2D* ptr_C,int const &i,int const &j)
+{
+	double dx = face.xf - h*(xi_u[QuIndex]) - ptr_C->xc;
+	double dy = face.yf - h*xi_v[j] - ptr_C->yc;
+	VenkatakrishnanFluxLimiter(*ptr_C,i,j);
+	face.fBh[i][j] = ptr_C->fBP[i][j] + ptr_C->fBPLimiter*(dx*ptr_C->fBP_x[i][j] + dy*ptr_C->fBP_y[i][j]);
+//isothermal flip
+	#ifndef _ARK_ISOTHERMAL_FLIP
+	face.gBh[i][j] = ptr_C->gBP[i][j] + ptr_C->gBPLimiter*(dx*ptr_C->gBP_x[i][j] + dy*ptr_C->gBP_y[i][j]);
+	#endif
+}
+void UW_Interior_phi_Bh(Face_2D& face,Cell_2D* ptr_C,int const &i,int const &j)
+{
+	double dx = face.xf - h*(xi_u[QuIndex]) - ptr_C->xc;
+	double dy = face.yf - h*xi_v[j] - ptr_C->yc;
+	face.fBh[i][j] = ptr_C->fBP[i][j] + (dx*ptr_C->fBP_x[i][j] + dy*ptr_C->fBP_y[i][j]);
+//isothermal flip
+	#ifndef _ARK_ISOTHERMAL_FLIP
+	face.gBh[i][j] = ptr_C->gBP[i][j] + (dx*ptr_C->gBP_x[i][j] + dy*ptr_C->gBP_y[i][j]);
+	#endif
+}
+void CD_Interior_phi_Bh(Face_2D &face,int i,int j)
+{
+	double _dx = face.lhsCell->xc - face.rhsCell->xc;
+	double _dy = face.lhsCell->yc - face.rhsCell->yc;
+	SetZero(_dx);
+	SetZero(_dy);
+	double _fBP_xF,_fBP_yF,_gBP_xF,_gBP_yF;
+	{
+		if(0.0 == _dx)
+		{
+			 _fBP_xF =  0.5*(face.lhsCell->fBP_x[i][j] + face.rhsCell->fBP_x[i][j]);
+			 _fBP_yF = (face.lhsCell->fBP[i][j] - face.rhsCell->fBP[i][j])/_dy;
+			 #ifndef _ARK_ISOTHERMAL_FLIP
+			 _gBP_xF =  0.5*(face.lhsCell->gBP_x[i][j] + face.rhsCell->gBP_x[i][j]);
+			 _gBP_yF = (face.lhsCell->gBP[i][j] - face.rhsCell->gBP[i][j])/_dy;
+			 #endif
+		}
+		else if(0.0 == _dy)
+		{
+			_fBP_yF = 0.5*(face.lhsCell->fBP_y[i][j] + face.rhsCell->fBP_y[i][j]);
+			_fBP_xF = (face.lhsCell->fBP[i][j] - face.rhsCell->fBP[i][j])/_dx;
+			#ifndef _ARK_ISOTHERMAL_FLIP
+			_gBP_yF = 0.5*(face.lhsCell->gBP_y[i][j] + face.rhsCell->gBP_y[i][j]);
+			_gBP_xF = (face.lhsCell->gBP[i][j] - face.rhsCell->gBP[i][j])/_dx;
+			#endif
+		}
+		else
+		{
+		}
+		face.fBh[i][j] = 0.5*(face.lhsCell->fBP[i][j] + face.rhsCell->fBP[i][j])
+				 - h*(_fBP_xF*(xi_u[QuIndex]) + _fBP_yF*xi_v[j]);
+		#ifndef _ARK_ISOTHERMAL_FLIP
+		face.gBh[i][j] = 0.5*(face.lhsCell->gBP[i][j] + face.rhsCell->gBP[i][j])
+				 - h*(_gBP_xF*(xi_u[QuIndex]) + _gBP_yF*xi_v[j]);
+		#endif
+	}	
+}
 void Update_phi_fBh(Face_2D &face)
 {
 	for(int i = 0;i < DV_Qu;++i)
@@ -472,6 +551,9 @@ void Flux_2D(Face_2D &face)
 	Update_phi_fBh(face);
 	Update_MacroVar_h(face);
 	Update_phi_Eqh(face);
+	#ifdef _ARK_FORCE_FLIP
+	Update_force_h(face);
+	#endif
 	Update_phi_h(face);
 	Update_phiFlux_h(face);
 }
@@ -534,13 +616,13 @@ void Update_Residual(int step)
 		if(step%writeFileControl == 0)
 		Output_Flowfield(step*dt, step);
 	#ifndef _ARK_NOHUP_FLIP
-		cout << setiosflags(ios::scientific) << setprecision(16);
+		cout << setiosflags(ios::scientific) << setprecision(12);
 		cout <<step <<"    "<<step*dt<<"    "<<SumRho<<"    "<<SumT<<"    "<<ResidualPer1k<<'\n';
 	#endif
 }
 void UpdateL2Error(int step)
 {
-	double L2_uv, L2_p;
+	double L2_uv, L2_p=0;
 	Output_L2Norm(step*dt,L2_uv,L2_p);
 	//cout << setiosflags(ios::scientific) << setprecision(12);
 	//cout <<step <<"    "<<SumRho<<"    "<<L2_uv<<"    "<<L2_p<<'\n';
